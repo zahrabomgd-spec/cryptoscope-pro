@@ -78,28 +78,19 @@
             </div>
         </div>
 
-        <!-- Right: Paper Trading Box with Auto Risk Management -->
+        <!-- Right: Paper Trading Box -->
         <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4 h-fit">
-            <h2 class="text-lg font-bold border-b border-slate-700 pb-2">محفظة التداول التجريبي الآلي</h2>
+            <h2 class="text-lg font-bold border-b border-slate-700 pb-2">محفظة التداول التجريبي</h2>
             <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 flex justify-between items-center">
                 <span class="text-sm text-slate-400">الرصيد المتاح:</span>
                 <span id="paper-balance" class="font-bold text-emerald-400 text-lg">10,000 $</span>
             </div>
-            
-            <div class="text-xs text-slate-400 bg-slate-900/40 p-2 rounded border border-slate-700/40">
-                ℹ️ يتم حساب **وقف الخسارة** و**جني الأرباح** تلقائياً حسب الإطار الزمني النشط.
-            </div>
-
             <div class="space-y-3">
                 <button onclick="executeTrade('BUY')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg font-bold transition text-white shadow-lg shadow-emerald-900/30">شراء / طويل (BUY)</button>
                 <button onclick="executeTrade('SELL')" class="w-full bg-rose-600 hover:bg-rose-500 py-3 rounded-lg font-bold transition text-white shadow-lg shadow-rose-900/30">بيع / قصير (SELL)</button>
             </div>
-
-            <div class="mt-4">
-                <h3 class="text-xs font-bold text-slate-400 mb-2">سجل الصفقات مع إدارة المخاطر:</h3>
-                <div id="trade-log" class="text-xs space-y-2 max-h-60 overflow-y-auto">
-                    <div class="text-slate-500">لا توجد صفقات مفعلة حالياً.</div>
-                </div>
+            <div id="trade-log" class="text-xs text-slate-400 mt-4 space-y-1">
+                <div>سجل الصفقات فارغ حالياً.</div>
             </div>
         </div>
     </main>
@@ -125,20 +116,19 @@
         const aiSummary = document.getElementById('ai-summary');
         const activeTfLabel = document.getElementById('active-tf-label');
 
-        // Fetch market data from Binance
         async function fetchMarketData() {
             try {
-                const klinesUrl = `https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${currentTimeframe}&limit=50`;
+                const klinesUrl = 'https://api.binance.com/api/v3/klines?symbol=' + currentSymbol + '&interval=' + currentTimeframe + '&limit=50';
                 const res = await fetch(klinesUrl);
                 const data = await res.json();
 
                 if (data && data.length > 0) {
-                    const closes = data.map(candle => parseFloat(candle[4]));
+                    const closes = data.map(function(candle) { return parseFloat(candle[4]); });
                     lastPrice = closes[closes.length - 1];
                     
                     priceElement.innerText = lastPrice.toLocaleString() + ' $';
 
-                    const sma = closes.reduce((a, b) => a + b, 0) / closes.length;
+                    const sma = closes.reduce(function(a, b) { return a + b; }, 0) / closes.length;
                     smaElement.innerText = sma.toFixed(2) + ' $';
 
                     let rsi = 50 + (Math.random() * 20 - 10);
@@ -147,35 +137,33 @@
                     if (lastPrice > sma) {
                         trendSignal.innerText = 'صاعد (Bullish)';
                         trendSignal.className = 'text-sm font-bold text-emerald-400';
-                        aiSummary.innerText = `على الإطار الزمني (${activeTfLabel.innerText})، السعر يتداول فوق المتوسط المتحرك البسيط، مما يشير إلى ضغط شرائي واستمرار الاتجاه الصاعد.`;
+                        aiSummary.innerText = 'على الإطار الزمني (' + activeTfLabel.innerText + ')، السعر يتداول فوق المتوسط المتحرك البسيط، مما يشير إلى ضغط شرائي واستمرار الاتجاه الصاعد.';
                     } else {
                         trendSignal.innerText = 'هابط (Bearish)';
                         trendSignal.className = 'text-sm font-bold text-rose-400';
-                        aiSummary.innerText = `على الإطار الزمني (${activeTfLabel.innerText})، السعر يتداول تحت المتوسط المتحرك، ويفضل الحذر ومراقبة مستويات الدعم القادمة.`;
+                        aiSummary.innerText = 'على الإطار الزمني (' + activeTfLabel.innerText + ')، السعر يتداول تحت المتوسط المتحرك، ويفضل الحذر ومراقبة مستويات الدعم القادمة.';
                     }
                 }
 
-                const tickerRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${currentSymbol}`);
+                const tickerRes = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=' + currentSymbol);
                 const tickerData = await tickerRes.json();
                 const change = parseFloat(tickerData.priceChangePercent);
                 priceChangeElement.innerText = (change >= 0 ? '+' : '') + change.toFixed(2) + '% (24س)';
-                priceChangeElement.className = `text-xs ${change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+                priceChangeElement.className = 'text-xs ' + (change >= 0 ? 'text-emerald-400' : 'text-rose-400');
 
             } catch (err) {
                 console.error('Error fetching data:', err);
             }
         }
 
-        // Symbol change
-        symbolSelect.addEventListener('change', (e) => {
+        symbolSelect.addEventListener('change', function(e) {
             currentSymbol = e.target.value;
             fetchMarketData();
         });
 
-        // Timeframe change buttons handling
-        document.querySelectorAll('.tf-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.tf-btn').forEach(b => {
+        document.querySelectorAll('.tf-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                document.querySelectorAll('.tf-btn').forEach(function(b) {
                     b.classList.remove('bg-emerald-600', 'text-white', 'font-bold', 'active');
                     b.classList.add('text-slate-400');
                 });
@@ -189,59 +177,19 @@
             });
         });
 
-        // Automated Risk Management (SL & TP based on Timeframe)
         function executeTrade(type) {
-            if (lastPrice === 0) return;
             const logBox = document.getElementById('trade-log');
             const timeStr = new Date().toLocaleTimeString();
-
-            // Define risk multipliers based on timeframe
-            let slPercent = 0.015; // 1.5% default
-            let tpPercent = 0.03;  // 3.0% default (1:2 Risk/Reward)
-
-            if (currentTimeframe === '5m' || currentTimeframe === '15m') {
-                slPercent = 0.008; // 0.8% for scalping
-                tpPercent = 0.016; // 1.6%
-            } else if (currentTimeframe === '1h' || currentTimeframe === '4h') {
-                slPercent = 0.02;  // 2%
-                tpPercent = 0.04;  // 4%
-            } else if (currentTimeframe === '1d') {
-                slPercent = 0.04;  // 4% for daily swing
-                tpPercent = 0.08;  // 8%
-            }
-
-            let stopLoss = 0;
-            let takeProfit = 0;
-
             if(type === 'BUY') {
-                stopLoss = lastPrice * (1 - slPercent);
-                takeProfit = lastPrice * (1 + tpPercent);
-                paperBalance += 50; // Mock profit simulation
-                logBox.innerHTML = `
-                    <div class="bg-emerald-950/40 border border-emerald-500/30 p-2 rounded">
-                        <div class="font-bold text-emerald-400">🟢 صفقة شراء (${currentSymbol}) - ${activeTfLabel.innerText}</div>
-                        <div>سعر الدخول: ${lastPrice.toFixed(2)} $</div>
-                        <div class="text-rose-400">🛑 وقف الخسارة (SL): ${stopLoss.toFixed(2)} $</div>
-                        <div class="text-cyan-400">🎯 جني الأرباح (TP): ${takeProfit.toFixed(2)} $</div>
-                        <div class="text-[10px] text-slate-500 mt-1">${timeStr}</div>
-                    </div>` + logBox.innerHTML;
+                paperBalance += (lastPrice * 0.01);
+                logBox.innerHTML = '<div class="text-emerald-400">[' + timeStr + '] صفقة شراء لـ ' + currentSymbol + ' بسعر ' + lastPrice.toFixed(2) + '</div>' + logBox.innerHTML;
             } else {
-                stopLoss = lastPrice * (1 + slPercent);
-                takeProfit = lastPrice * (1 - tpPercent);
-                paperBalance -= 30; // Mock loss simulation
-                logBox.innerHTML = `
-                    <div class="bg-rose-950/40 border border-rose-500/30 p-2 rounded">
-                        <div class="font-bold text-rose-400">🔴 صفقة بيع (${currentSymbol}) - ${activeTfLabel.innerText}</div>
-                        <div>سعر الدخول: ${lastPrice.toFixed(2)} $</div>
-                        <div class="text-rose-400">🛑 وقف الخسارة (SL): ${stopLoss.toFixed(2)} $</div>
-                        <div class="text-cyan-400">🎯 جني الأرباح (TP): ${takeProfit.toFixed(2)} $</div>
-                        <div class="text-[10px] text-slate-500 mt-1">${timeStr}</div>
-                    </div>` + logBox.innerHTML;
+                paperBalance -= (lastPrice * 0.005);
+                logBox.innerHTML = '<div class="text-rose-400">[' + timeStr + '] صفقة بيع لـ ' + currentSymbol + ' بسعر ' + lastPrice.toFixed(2) + '</div>' + logBox.innerHTML;
             }
             document.getElementById('paper-balance').innerText = paperBalance.toFixed(2) + ' $';
         }
 
-        // Initial fetch and interval refresh
         fetchMarketData();
         setInterval(fetchMarketData, 10000);
     </script>
