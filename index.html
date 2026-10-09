@@ -3,195 +3,632 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptoScope Pro - تحليلات العملات الرقمية</title>
-    <!-- Tailwind CSS CDN -->
+    <title>CryptoScope Pro - منصة التحليل والتداول المباشر</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-        body { font-family: 'Cairo', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        body { font-family: 'Cairo', sans-serif; background-color: #0b0e14; color: #f3f4f6; }
+        .glass-card { background: rgba(30, 34, 45, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glow-green { box-shadow: 0 0 20px rgba(0, 200, 83, 0.2); }
+        .glow-red { box-shadow: 0 0 20px rgba(255, 61, 0, 0.2); }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
-    <!-- Header -->
-    <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-3 space-x-reverse">
-                <span class="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">CryptoScope Pro</span>
-            </div>
-            <div id="live-status" class="flex items-center text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">
-                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse ml-2"></span>
-                متصل مباشر بـ Binance
-            </div>
-        </div>
-    </header>
+<body class="min-h-screen flex justify-center items-center p-0 md:p-6">
 
-    <!-- Main Content -->
-    <main class="container mx-auto p-4 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left & Center: Chart & Analysis -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Symbol & Timeframe Selector -->
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-wrap justify-between items-center gap-4">
-                <div class="flex items-center space-x-3 space-x-reverse">
-                    <select id="symbol-select" class="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg font-bold focus:outline-none focus:border-emerald-500">
-                        <option value="BTCUSDT">BTC / USDT</option>
-                        <option value="ETHUSDT">ETH / USDT</option>
-                        <option value="SOLUSDT">SOL / USDT</option>
-                        <option value="BNBUSDT">BNB / USDT</option>
-                        <option value="XRPUSDT">XRP / USDT</option>
-                    </select>
-                    <div>
-                        <div id="current-price" class="text-xl font-bold text-emerald-400">0.00</div>
-                        <div id="price-change" class="text-xs text-slate-400">--</div>
-                    </div>
-                </div>
-
-                <!-- Timeframe Buttons -->
-                <div class="flex bg-slate-900 p-1 rounded-lg border border-slate-700 space-x-1 space-x-reverse" id="timeframe-group">
-                    <button data-tf="5m" class="tf-btn px-3 py-1 text-xs rounded-md transition text-slate-400 hover:text-white">5د</button>
-                    <button data-tf="15m" class="tf-btn px-3 py-1 text-xs rounded-md transition text-slate-400 hover:text-white">15د</button>
-                    <button data-tf="1h" class="tf-btn px-3 py-1 text-xs rounded-md transition text-slate-400 hover:text-white">1س</button>
-                    <button data-tf="4h" class="tf-btn px-3 py-1 text-xs rounded-md transition text-slate-400 hover:text-white">4س</button>
-                    <button data-tf="1d" class="tf-btn px-3 py-1 text-xs rounded-md transition bg-emerald-600 text-white font-bold active">يومي</button>
+    <!-- Mobile App Container -->
+    <div class="w-full max-w-md bg-[#0b0e14] md:rounded-[40px] md:border-[8px] md:border-[#1f2937] shadow-2xl overflow-hidden flex flex-col h-screen md:h-[844px] relative">
+        
+        <!-- App Header -->
+        <div class="px-5 pt-4 pb-3 bg-[#121620] border-b border-gray-800 flex justify-between items-center z-10">
+            <div class="flex items-center space-x-2.5 space-x-reverse">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center font-black text-black text-base shadow-lg">CS</div>
+                <div>
+                    <h1 class="font-black text-sm text-white">CryptoScope <span class="text-amber-400">Pro</span></h1>
+                    <p class="text-[9px] text-emerald-400 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        مباشر من Binance (ثانيتي)
+                    </p>
                 </div>
             </div>
-
-            <!-- Analysis Box -->
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
-                <h2 class="text-lg font-bold border-b border-slate-700 pb-2">تحليل المؤشرات الفنية (<span id="active-tf-label">يومي</span>)</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                    <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
-                        <div class="text-xs text-slate-400 mb-1">اتجاه السعر</div>
-                        <div id="trend-signal" class="text-sm font-bold text-emerald-400">جاري الحساب...</div>
-                    </div>
-                    <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
-                        <div class="text-xs text-slate-400 mb-1">مؤشر القوة النسبية (RSI)</div>
-                        <div id="rsi-value" class="text-sm font-bold text-cyan-400">--</div>
-                    </div>
-                    <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
-                        <div class="text-xs text-slate-400 mb-1">متوسط الحركة (SMA)</div>
-                        <div id="sma-value" class="text-sm font-bold text-amber-400">--</div>
-                    </div>
-                </div>
-                <div id="ai-summary" class="bg-slate-900/50 p-4 rounded-lg text-sm text-slate-300 border border-slate-700/50 leading-relaxed">
-                    جاري تحليل شمعات الإطار الزمني المحدد واستخراج إشارات الدخول...
-                </div>
+            <!-- Timeframe Selector Tabs -->
+            <div class="flex bg-gray-900 p-1 rounded-xl border border-gray-800 text-[11px]">
+                <button onclick="setTimeframe('5m')" id="tf-5m" class="px-2 py-1 rounded-lg font-bold transition text-gray-400">5د</button>
+                <button onclick="setTimeframe('1h')" id="tf-1h" class="px-2 py-1 rounded-lg font-bold transition text-gray-400">ساعة</button>
+                <button onclick="setTimeframe('24h')" id="tf-24h" class="px-2 py-1 rounded-lg font-bold transition bg-amber-500 text-black">يومي</button>
+                <button onclick="setTimeframe('7d')" id="tf-7d" class="px-2 py-1 rounded-lg font-bold transition text-gray-400">أسبوعي</button>
             </div>
         </div>
 
-        <!-- Right: Paper Trading Box -->
-        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4 h-fit">
-            <h2 class="text-lg font-bold border-b border-slate-700 pb-2">محفظة التداول التجريبي</h2>
-            <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 flex justify-between items-center">
-                <span class="text-sm text-slate-400">الرصيد المتاح:</span>
-                <span id="paper-balance" class="font-bold text-emerald-400 text-lg">10,000 $</span>
-            </div>
-            <div class="space-y-3">
-                <button onclick="executeTrade('BUY')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg font-bold transition text-white shadow-lg shadow-emerald-900/30">شراء / طويل (BUY)</button>
-                <button onclick="executeTrade('SELL')" class="w-full bg-rose-600 hover:bg-rose-500 py-3 rounded-lg font-bold transition text-white shadow-lg shadow-rose-900/30">بيع / قصير (SELL)</button>
-            </div>
-            <div id="trade-log" class="text-xs text-slate-400 mt-4 space-y-1">
-                <div>سجل الصفقات فارغ حالياً.</div>
-            </div>
-        </div>
-    </main>
+        <!-- Main Screen Area -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-24" id="main-scroll-area">
+            
+            <!-- SECTION 1: ANALYTICS VIEW -->
+            <div id="view-analytics" class="space-y-4">
+                <!-- Coin Selector Carousel (20 Coins) -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="text-xs font-semibold text-gray-400">اختر من بين 20 عملة قوية:</label>
+                        <span id="last-update-time" class="text-[10px] text-amber-400 font-mono">متصل...</span>
+                    </div>
+                    <div id="coin-selector" class="flex space-x-2 space-x-reverse overflow-x-auto pb-1.5">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
 
-    <!-- Footer -->
-    <footer class="bg-slate-900 border-t border-slate-800 p-4 text-center text-xs text-slate-500">
-        CryptoScope Pro &copy; 2026 - تم النشر عبر GitHub Pages
-    </footer>
+                <!-- Active Coin Price Card -->
+                <div class="glass-card rounded-2xl p-4 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center space-x-3 space-x-reverse">
+                            <img id="active-coin-icon" src="" alt="" class="w-10 h-10 rounded-full">
+                            <div>
+                                <h2 id="active-coin-name" class="text-base font-bold text-white">Bitcoin</h2>
+                                <span id="active-coin-symbol" class="text-[10px] px-2 py-0.5 bg-gray-800 text-amber-400 rounded-md font-mono">BTCUSDT</span>
+                            </div>
+                        </div>
+                        <div class="text-left">
+                            <div id="active-coin-price" class="text-xl font-black text-white font-mono">$0.00</div>
+                            <div id="active-coin-change" class="text-xs font-semibold text-emerald-400 flex items-center justify-end space-x-1 space-x-reverse">
+                                <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                                <span id="active-coin-change-text">0.00%</span>
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- JavaScript Logic -->
-    <script>
-        let currentSymbol = 'BTCUSDT';
-        let currentTimeframe = '1d';
-        let paperBalance = 10000;
-        let lastPrice = 0;
+                    <!-- Quick Stats Grid -->
+                    <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-800/80 text-center">
+                        <div class="bg-gray-900/40 p-2 rounded-xl">
+                            <span class="text-[9px] text-gray-400 block">أعلى (24س)</span>
+                            <span id="stat-high" class="text-[11px] font-bold text-emerald-400 font-mono">-</span>
+                        </div>
+                        <div class="bg-gray-900/40 p-2 rounded-xl">
+                            <span class="text-[9px] text-gray-400 block">أقل (24س)</span>
+                            <span id="stat-low" class="text-[11px] font-bold text-red-400 font-mono">-</span>
+                        </div>
+                        <div class="bg-gray-900/40 p-2 rounded-xl">
+                            <span class="text-[9px] text-gray-400 block">الفوليوم</span>
+                            <span id="stat-volume" class="text-[11px] font-bold text-amber-400 font-mono">-</span>
+                        </div>
+                    </div>
+                </div>
 
-        const symbolSelect = document.getElementById('symbol-select');
-        const priceElement = document.getElementById('current-price');
-        const priceChangeElement = document.getElementById('price-change');
-        const rsiElement = document.getElementById('rsi-value');
-        const smaElement = document.getElementById('sma-value');
-        const trendSignal = document.getElementById('trend-signal');
-        const aiSummary = document.getElementById('ai-summary');
-        const activeTfLabel = document.getElementById('active-tf-label');
+                <!-- Analysis Trigger Button -->
+                <button onclick="toggleFullAnalysis()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-black rounded-2xl shadow-lg flex items-center justify-center space-x-2 space-x-reverse transition text-xs">
+                    <i data-lucide="cpu" class="w-4 h-4"></i>
+                    <span id="analysis-btn-text">إظهار التحليل الفني ومؤشرات (<span id="tf-btn-label">يومي</span>)</span>
+                    <i data-lucide="chevron-down" id="analysis-chevron" class="w-4 h-4 transition-transform"></i>
+                </button>
 
-        async function fetchMarketData() {
-            try {
-                const klinesUrl = 'https://api.binance.com/api/v3/klines?symbol=' + currentSymbol + '&interval=' + currentTimeframe + '&limit=50';
-                const res = await fetch(klinesUrl);
-                const data = await res.json();
-
-                if (data && data.length > 0) {
-                    const closes = data.map(function(candle) { return parseFloat(candle[4]); });
-                    lastPrice = closes[closes.length - 1];
+                <!-- FULL ANALYSIS SECTION -->
+                <div id="full-analysis-container" class="space-y-3.5 hidden">
                     
-                    priceElement.innerText = lastPrice.toLocaleString() + ' $';
+                    <!-- Smart Trading Signal Card -->
+                    <div class="glass-card rounded-2xl p-4 border-l-4 border-emerald-500 glow-green">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-white flex items-center space-x-2 space-x-reverse text-xs">
+                                <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
+                                <span>توصية الدخول والخروج (<span id="tf-signal-label">يومي</span>)</span>
+                            </h3>
+                            <span id="signal-badge" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg border border-emerald-500/30">شراء قوي</span>
+                        </div>
 
-                    const sma = closes.reduce(function(a, b) { return a + b; }, 0) / closes.length;
-                    smaElement.innerText = sma.toFixed(2) + ' $';
+                        <div class="space-y-2.5 font-mono text-xs">
+                            <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 flex justify-between items-center">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 block font-sans">سعر الدخول المثالي</span>
+                                    <span id="sig-entry" class="font-bold text-emerald-400">-</span>
+                                </div>
+                                <button onclick="quickTradeFromSignal('BUY')" class="px-3 py-1.5 bg-emerald-500 text-black font-bold rounded-lg text-[10px] font-sans hover:bg-emerald-400">تنفيذ شراء</button>
+                            </div>
 
-                    let rsi = 50 + (Math.random() * 20 - 10);
-                    rsiElement.innerText = rsi.toFixed(1);
+                            <div class="bg-red-500/10 p-2.5 rounded-xl border border-red-500/20 flex justify-between items-center">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 block font-sans">وقف الخسارة (SL)</span>
+                                    <span id="sig-sl" class="font-bold text-red-400">-</span>
+                                </div>
+                                <i data-lucide="shield-alert" class="w-4 h-4 text-red-400"></i>
+                            </div>
 
-                    if (lastPrice > sma) {
-                        trendSignal.innerText = 'صاعد (Bullish)';
-                        trendSignal.className = 'text-sm font-bold text-emerald-400';
-                        aiSummary.innerText = 'على الإطار الزمني (' + activeTfLabel.innerText + ')، السعر يتداول فوق المتوسط المتحرك البسيط، مما يشير إلى ضغط شرائي واستمرار الاتجاه الصاعد.';
-                    } else {
-                        trendSignal.innerText = 'هابط (Bearish)';
-                        trendSignal.className = 'text-sm font-bold text-rose-400';
-                        aiSummary.innerText = 'على الإطار الزمني (' + activeTfLabel.innerText + ')، السعر يتداول تحت المتوسط المتحرك، ويفضل الحذر ومراقبة مستويات الدعم القادمة.';
-                    }
+                            <div class="bg-gray-900/60 p-2.5 rounded-xl border border-gray-800 space-y-1.5">
+                                <span class="text-[10px] text-gray-400 block font-sans">أهداف جني الأرباح (TP)</span>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div class="bg-gray-800/80 p-1.5 rounded-lg">
+                                        <span class="text-[9px] text-gray-400 block font-sans">الهدف 1</span>
+                                        <span id="sig-tp1" class="font-bold text-amber-400">-</span>
+                                    </div>
+                                    <div class="bg-gray-800/80 p-1.5 rounded-lg">
+                                        <span class="text-[9px] text-gray-400 block font-sans">الهدف 2</span>
+                                        <span id="sig-tp2" class="font-bold text-amber-400">-</span>
+                                    </div>
+                                    <div class="bg-gray-800/80 p-1.5 rounded-lg">
+                                        <span class="text-[9px] text-gray-400 block font-sans">الهدف 3</span>
+                                        <span id="sig-tp3" class="font-bold text-amber-400">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Technical & Indicators Grid -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="glass-card rounded-2xl p-3 space-y-2">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-1.5">
+                                <i data-lucide="activity" class="w-3.5 h-3.5 text-amber-400"></i> مؤشرات فنية
+                            </h4>
+                            <div class="space-y-1 text-[11px]">
+                                <div class="flex justify-between"><span class="text-gray-400">RSI</span><span id="ind-rsi" class="font-bold text-amber-400">58.4</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">MACD</span><span id="ind-macd" class="font-bold text-emerald-400">صاعد</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">المتوسطات</span><span id="ind-ma" class="font-bold text-emerald-400">إيجابي</span></div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-3 space-y-2">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-1.5">
+                                <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-400"></i> السيولة والزخم
+                            </h4>
+                            <div class="space-y-1 text-[11px]">
+                                <div class="flex justify-between"><span class="text-gray-400">قوة المشترين</span><span class="font-bold text-emerald-400">65%</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">التقلب</span><span class="font-bold text-white">معتدل</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">الحالة</span><span class="font-bold text-amber-400">فرصة دخول</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 2: LIVE PAPER TRADING VIEW -->
+            <div id="view-trading" class="space-y-4 hidden">
+                <!-- Balance Card -->
+                <div class="glass-card rounded-2xl p-4 relative">
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <span class="text-[10px] text-gray-400 block">رصيد المحفظة التجريبية ($)</span>
+                            <div class="text-xl font-black text-amber-400 font-mono" id="paper-balance">$10,000.00</div>
+                        </div>
+                        <button onclick="openBalanceModal()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-xs font-bold border border-gray-700 flex items-center gap-1">
+                            <i data-lucide="settings" class="w-3.5 h-3.5"></i> تعديل
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800 text-xs">
+                        <div class="bg-gray-900/60 p-2 rounded-xl">
+                            <span class="text-gray-400 block text-[10px]">الصفقات النشطة</span>
+                            <span id="active-trades-count" class="font-bold text-white">0 صفقة</span>
+                        </div>
+                        <div class="bg-gray-900/60 p-2 rounded-xl">
+                            <span class="text-gray-400 block text-[10px]">الربح/الخسارة اللحظية</span>
+                            <span id="total-pnl" class="font-bold text-emerald-400 font-mono">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Placement Box -->
+                <div class="glass-card rounded-2xl p-4 space-y-3">
+                    <h3 class="font-bold text-white text-xs flex items-center gap-2 border-b border-gray-800 pb-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-amber-400"></i> فتح صفقة تداول بأسعار Binance
+                    </h3>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded-xl">
+                            <span class="text-gray-400">العملة الحالية:</span>
+                            <span id="trade-coin-name" class="font-bold text-white">-</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded-xl">
+                            <span class="text-gray-400">سعر Binance الفوري:</span>
+                            <span id="trade-live-price" class="font-bold text-amber-400 font-mono">$0.00</span>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 block mb-1">المبلغ ($):</label>
+                            <input type="number" id="trade-amount-input" value="500" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 block mb-1">الرافعة المالية:</label>
+                            <select id="trade-leverage-input" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-amber-500">
+                                <option value="1">1x (عادي)</option>
+                                <option value="5">5x (متوسط)</option>
+                                <option value="10" selected>10x (موصى به)</option>
+                                <option value="20">20x (عالي)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button onclick="executePaperTrade('BUY')" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-black font-black rounded-xl text-xs shadow-lg transition">
+                            شراء (LONG 📈)
+                        </button>
+                        <button onclick="executePaperTrade('SELL')" class="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl text-xs shadow-lg transition">
+                            بيع (SHORT 📉)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Positions List -->
+                <div class="space-y-2">
+                    <h3 class="font-bold text-white text-xs">الصفقات النشطة</h3>
+                    <div id="open-positions-list" class="space-y-2">
+                        <div class="glass-card p-4 rounded-xl text-center text-xs text-gray-500">
+                            لا توجد صفقات مفتوحة حالياً.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Closed Trades History -->
+                <div class="space-y-2 pt-2">
+                    <h3 class="font-bold text-white text-xs flex items-center gap-1.5">
+                        <i data-lucide="history" class="w-4 h-4 text-amber-400"></i> سجل الصفقات المغلقة والأرباح
+                    </h3>
+                    <div id="closed-positions-list" class="space-y-2">
+                        <div class="glass-card p-4 rounded-xl text-center text-xs text-gray-500">
+                            لا يوجد سجل صفقات مغلقة بعد.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <div class="absolute bottom-0 left-0 right-0 bg-[#121620]/95 backdrop-blur-md border-t border-gray-800 px-6 py-2.5 flex justify-around items-center z-20">
+            <button onclick="switchTab('analytics')" id="nav-analytics" class="flex flex-col items-center text-amber-400 space-y-1 transition">
+                <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">التحليلات</span>
+            </button>
+            <button onclick="switchTab('trading')" id="nav-trading" class="flex flex-col items-center text-gray-400 hover:text-white space-y-1 transition">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">التداول التجريبي</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Balance Modal -->
+    <div id="balance-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-3xl p-5 space-y-4">
+            <h3 class="font-bold text-white text-base">تعديل رصيد المحفظة</h3>
+            <p class="text-xs text-gray-400">أدخل الرصيد التجريبي الجديد ($):</p>
+            <input type="number" id="new-balance-input" value="10000" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white font-mono text-base focus:outline-none focus:border-amber-500">
+            <div class="flex space-x-2 space-x-reverse">
+                <button onclick="saveNewBalance()" class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl text-xs">حفظ</button>
+                <button onclick="closeBalanceModal()" class="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-xl text-xs">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // 20 Strong Cryptocurrencies Map
+        const coinsMap = {
+            BTCUSDT: { name: "Bitcoin", symbol: "BTCUSDT", icon: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            ETHUSDT: { name: "Ethereum", symbol: "ETHUSDT", icon: "https://assets.coingecko.com/coins/images/279/large/ethereum.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            SOLUSDT: { name: "Solana", symbol: "SOLUSDT", icon: "https://assets.coingecko.com/coins/images/4128/large/solana.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            XRPUSDT: { name: "XRP", symbol: "XRPUSDT", icon: "https://assets.coingecko.com/coins/images/44/large/xrp_symbol.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            BNBUSDT: { name: "BNB", symbol: "BNBUSDT", icon: "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            ADAUSDT: { name: "Cardano", symbol: "ADAUSDT", icon: "https://assets.coingecko.com/coins/images/975/large/cardano.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            DOGEUSDT: { name: "Dogecoin", symbol: "DOGEUSDT", icon: "https://assets.coingecko.com/coins/images/5/large/dogecoin.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            AVAXUSDT: { name: "Avalanche", symbol: "AVAXUSDT", icon: "https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            DOTUSDT: { name: "Polkadot", symbol: "DOTUSDT", icon: "https://assets.coingecko.com/coins/images/12171/large/polkadot.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            LINKUSDT: { name: "Chainlink", symbol: "LINKUSDT", icon: "https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            NEARUSDT: { name: "NEAR", symbol: "NEARUSDT", icon: "https://assets.coingecko.com/coins/images/10365/large/near.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            UNIUSDT: { name: "Uniswap", symbol: "UNIUSDT", icon: "https://assets.coingecko.com/coins/images/12504/large/uniswap-uni.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            ATOMUSDT: { name: "Cosmos", symbol: "ATOMUSDT", icon: "https://assets.coingecko.com/coins/images/1481/large/cosmos_hub.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            ICPUSDT: { name: "ICP", symbol: "ICPUSDT", icon: "https://assets.coingecko.com/coins/images/14495/large/Internet_Computer_logo.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            APTUSDT: { name: "Aptos", symbol: "APTUSDT", icon: "https://assets.coingecko.com/coins/images/26455/large/aptos_round.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            ARBUSDT: { name: "Arbitrum", symbol: "ARBUSDT", icon: "https://assets.coingecko.com/coins/images/16547/large/arbitrum-shield.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            OPUSDT: { name: "Optimism", symbol: "OPUSDT", icon: "https://assets.coingecko.com/coins/images/25244/large/Optimism.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            SUIUSDT: { name: "Sui", symbol: "SUIUSDT", icon: "https://assets.coingecko.com/coins/images/26375/large/sui_asset.jpeg", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            LTCUSDT: { name: "Litecoin", symbol: "LTCUSDT", icon: "https://assets.coingecko.com/coins/images/2/large/litecoin.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
+            RENDERUSDT: { name: "Render", symbol: "RENDERUSDT", icon: "https://assets.coingecko.com/coins/images/11636/large/rndr.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 }
+        };
+
+        let currentCoinKey = 'BTCUSDT';
+        let currentTimeframe = '24h';
+        let virtualBalance = 10000.0;
+        let openPositions = [];
+        let closedTrades = [];
+
+        // Fetch Binance Prices every 1 second
+        async function fetchBinancePrices() {
+            try {
+                const symbols = JSON.stringify(Object.keys(coinsMap));
+                const response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${symbols}`);
+                const data = await response.json();
+
+                if (Array.isArray(data)) {
+                    data.forEach(item => {
+                        if (coinsMap[item.symbol]) {
+                            coinsMap[item.symbol].price = parseFloat(item.lastPrice);
+                            coinsMap[item.symbol].change24 = parseFloat(item.priceChangePercent);
+                            coinsMap[item.symbol].high = parseFloat(item.highPrice);
+                            coinsMap[item.symbol].low = parseFloat(item.lowPrice);
+                            coinsMap[item.symbol].vol = parseFloat(item.quoteVolume);
+                        }
+                    });
                 }
-
-                const tickerRes = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=' + currentSymbol);
-                const tickerData = await tickerRes.json();
-                const change = parseFloat(tickerData.priceChangePercent);
-                priceChangeElement.innerText = (change >= 0 ? '+' : '') + change.toFixed(2) + '% (24س)';
-                priceChangeElement.className = 'text-xs ' + (change >= 0 ? 'text-emerald-400' : 'text-rose-400');
-
+                document.getElementById('last-update-time').innerText = "متصل بـ Binance";
+                updateUI();
+                updateOpenPositionsPnL();
             } catch (err) {
-                console.error('Error fetching data:', err);
+                console.log("Binance API Error", err);
             }
         }
 
-        symbolSelect.addEventListener('change', function(e) {
-            currentSymbol = e.target.value;
-            fetchMarketData();
-        });
-
-        document.querySelectorAll('.tf-btn').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                document.querySelectorAll('.tf-btn').forEach(function(b) {
-                    b.classList.remove('bg-emerald-600', 'text-white', 'font-bold', 'active');
-                    b.classList.add('text-slate-400');
-                });
-                e.target.classList.add('bg-emerald-600', 'text-white', 'font-bold', 'active');
-                e.target.classList.remove('text-slate-400');
-
-                currentTimeframe = e.target.getAttribute('data-tf');
-                activeTfLabel.innerText = e.target.innerText;
-                
-                fetchMarketData();
+        function renderCoinSelector() {
+            const container = document.getElementById('coin-selector');
+            container.innerHTML = '';
+            Object.keys(coinsMap).forEach(key => {
+                const coin = coinsMap[key];
+                const isActive = key === currentCoinKey;
+                const btn = document.createElement('button');
+                btn.onclick = () => { currentCoinKey = key; updateUI(); };
+                btn.className = `flex items-center space-x-1.5 space-x-reverse px-2.5 py-2 rounded-xl font-bold text-xs transition flex-shrink-0 ${
+                    isActive ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700'
+                }`;
+                btn.innerHTML = `<img src="${coin.icon}" class="w-4 h-4 rounded-full"><span>${key.replace('USDT','')}</span>`;
+                container.appendChild(btn);
             });
-        });
-
-        function executeTrade(type) {
-            const logBox = document.getElementById('trade-log');
-            const timeStr = new Date().toLocaleTimeString();
-            if(type === 'BUY') {
-                paperBalance += (lastPrice * 0.01);
-                logBox.innerHTML = '<div class="text-emerald-400">[' + timeStr + '] صفقة شراء لـ ' + currentSymbol + ' بسعر ' + lastPrice.toFixed(2) + '</div>' + logBox.innerHTML;
-            } else {
-                paperBalance -= (lastPrice * 0.005);
-                logBox.innerHTML = '<div class="text-rose-400">[' + timeStr + '] صفقة بيع لـ ' + currentSymbol + ' بسعر ' + lastPrice.toFixed(2) + '</div>' + logBox.innerHTML;
-            }
-            document.getElementById('paper-balance').innerText = paperBalance.toFixed(2) + ' $';
         }
 
-        fetchMarketData();
-        setInterval(fetchMarketData, 10000);
+        function updateUI() {
+            const coin = coinsMap[currentCoinKey];
+            document.getElementById('active-coin-icon').src = coin.icon;
+            document.getElementById('active-coin-name').innerText = coin.name;
+            document.getElementById('active-coin-symbol').innerText = coin.symbol + " (" + currentTimeframe.toUpperCase() + ")";
+            document.getElementById('active-coin-price').innerText = "$" + coin.price.toLocaleString(undefined, {minimumFractionDigits: 2});
+            
+            const changeEl = document.getElementById('active-coin-change');
+            const isPos = coin.change24 >= 0;
+            changeEl.className = `text-xs font-semibold flex items-center justify-end space-x-1 space-x-reverse ${isPos ? 'text-emerald-400' : 'text-red-400'}`;
+            document.getElementById('active-coin-change-text').innerText = (isPos ? "+" : "") + coin.change24.toFixed(2) + "%";
+
+            document.getElementById('stat-high').innerText = "$" + coin.high.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('stat-low').innerText = "$" + coin.low.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('stat-volume').innerText = "$" + (coin.vol / 1e6).toFixed(1) + "M";
+
+            // Trading view sync
+            document.getElementById('trade-coin-name').innerText = `${coin.name} (${coin.symbol})`;
+            document.getElementById('trade-live-price').innerText = "$" + coin.price.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+            // Signal calculations based on TF & Price
+            const p = coin.price;
+            let spreadFactor = currentTimeframe === '5m' ? 0.001 : (currentTimeframe === '1h' ? 0.003 : 0.005);
+            document.getElementById('sig-entry').innerText = `$${(p * (1 - spreadFactor)).toFixed(2)} - $${p.toFixed(2)}`;
+            document.getElementById('sig-sl').innerText = `$${(p * (1 - spreadFactor * 2.5)).toFixed(2)}`;
+            document.getElementById('sig-tp1').innerText = `$${(p * (1 + spreadFactor * 1.5)).toFixed(2)}`;
+            document.getElementById('sig-tp2').innerText = `$${(p * (1 + spreadFactor * 3.0)).toFixed(2)}`;
+            document.getElementById('sig-tp3').innerText = `$${(p * (1 + spreadFactor * 5.0)).toFixed(2)}`;
+
+            document.getElementById('ind-rsi').innerText = (50 + (coin.change24 * 1.5)).toFixed(1);
+
+            lucide.createIcons();
+        }
+
+        function setTimeframe(tf) {
+            currentTimeframe = tf;
+            ['5m', '1h', '24h', '7d'].forEach(t => {
+                const btn = document.getElementById(`tf-${t}`);
+                if (t === tf) {
+                    btn.className = "px-2 py-1 rounded-lg font-bold transition bg-amber-500 text-black";
+                } else {
+                    btn.className = "px-2 py-1 rounded-lg font-bold transition text-gray-400";
+                }
+            });
+            const tfText = tf === '5m' ? '5 دقائق' : (tf === '1h' ? 'ساعة' : (tf === '24h' ? 'يومي' : 'أسبوعي'));
+            document.getElementById('tf-btn-label').innerText = tfText;
+            document.getElementById('tf-signal-label').innerText = tfText;
+            updateUI();
+        }
+
+        let isAnalysisOpen = false;
+        function toggleFullAnalysis() {
+            isAnalysisOpen = !isAnalysisOpen;
+            const container = document.getElementById('full-analysis-container');
+            const chevron = document.getElementById('analysis-chevron');
+            const btnText = document.getElementById('analysis-btn-text');
+            if (isAnalysisOpen) {
+                container.classList.remove('hidden');
+                chevron.style.transform = 'rotate(180deg)';
+                btnText.innerText = 'إخفاء التحليل الفني';
+            } else {
+                container.classList.add('hidden');
+                chevron.style.transform = 'rotate(0deg)';
+                btnText.innerText = `إظهار التحليل الفني ومؤشرات (${currentTimeframe.toUpperCase()})`;
+            }
+        }
+
+        function switchTab(tab) {
+            const anEl = document.getElementById('view-analytics');
+            const trEl = document.getElementById('view-trading');
+            const navAn = document.getElementById('nav-analytics');
+            const navTr = document.getElementById('nav-trading');
+
+            if (tab === 'analytics') {
+                anEl.classList.remove('hidden');
+                trEl.classList.add('hidden');
+                navAn.className = "flex flex-col items-center text-amber-400 space-y-1 transition";
+                navTr.className = "flex flex-col items-center text-gray-400 hover:text-white space-y-1 transition";
+            } else {
+                anEl.classList.add('hidden');
+                trEl.classList.remove('hidden');
+                navTr.className = "flex flex-col items-center text-amber-400 space-y-1 transition";
+                navAn.className = "flex flex-col items-center text-gray-400 hover:text-white space-y-1 transition";
+            }
+        }
+
+        // Paper Trading Functions
+        function executePaperTrade(type) {
+            const amount = parseFloat(document.getElementById('trade-amount-input').value);
+            const leverage = parseInt(document.getElementById('trade-leverage-input').value);
+
+            if (isNaN(amount) || amount <= 0) {
+                alert("يرجى إدخال مبلغ صحيح!");
+                return;
+            }
+            if (amount > virtualBalance) {
+                alert("المبلغ المدخل أكبر من رصيدك المتاح!");
+                return;
+            }
+
+            virtualBalance -= amount;
+            const coin = coinsMap[currentCoinKey];
+            
+            const position = {
+                id: Date.now() + Math.random(),
+                coinKey: currentCoinKey,
+                coinName: coin.name,
+                type: type,
+                amount: amount,
+                leverage: leverage,
+                entryPrice: coin.price,
+                entryTime: new Date().toLocaleTimeString('ar-SA')
+            };
+
+            openPositions.push(position);
+            updateBalanceDisplay();
+            renderOpenPositions();
+            switchTab('trading');
+        }
+
+        function quickTradeFromSignal(type) {
+            executePaperTrade(type);
+        }
+
+        function updateOpenPositionsPnL() {
+            if (openPositions.length === 0) return;
+            let totalPnL = 0;
+
+            openPositions.forEach(pos => {
+                const currentPrice = coinsMap[pos.coinKey].price;
+                let priceDiffPercent = 0;
+                if (pos.type === 'BUY') {
+                    priceDiffPercent = (currentPrice - pos.entryPrice) / pos.entryPrice;
+                } else {
+                    priceDiffPercent = (pos.entryPrice - currentPrice) / pos.entryPrice;
+                }
+                const pnl = pos.amount * priceDiffPercent * pos.leverage;
+                pos.currentPnL = pnl;
+                totalPnL += pnl;
+            });
+
+            document.getElementById('total-pnl').innerText = (totalPnL >= 0 ? "+$" : "-$") + Math.abs(totalPnL).toFixed(2);
+            document.getElementById('total-pnl').className = `font-bold font-mono ${totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+            renderOpenPositions();
+        }
+
+        function renderOpenPositions() {
+            const container = document.getElementById('open-positions-list');
+            document.getElementById('active-trades-count').innerText = openPositions.length + " صفقة";
+
+            if (openPositions.length === 0) {
+                container.innerHTML = `<div class="glass-card p-4 rounded-xl text-center text-xs text-gray-500">لا توجد صفقات مفتوحة حالياً.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            openPositions.forEach(pos => {
+                const currentPrice = coinsMap[pos.coinKey].price;
+                const pnl = pos.currentPnL || 0;
+                const isProf = pnl >= 0;
+
+                const card = document.createElement('div');
+                card.className = `glass-card p-3 rounded-xl border-l-4 ${isProf ? 'border-emerald-500' : 'border-red-500'} space-y-2 text-xs`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-white">${pos.coinName} (${pos.type === 'BUY' ? 'شراء Long' : 'بيع Short'} - ${pos.leverage}x)</span>
+                        <span class="font-mono ${isProf ? 'text-emerald-400' : 'text-red-400'} font-bold">${isProf ? '+' : ''}$${pnl.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-gray-400 font-mono">
+                        <span>الدخول: $${pos.entryPrice.toLocaleString()}</span>
+                        <span>الحالي: $${currentPrice.toLocaleString()}</span>
+                    </div>
+                    <button onclick="closePosition(${pos.id})" class="w-full py-1.5 bg-gray-800 hover:bg-red-500 hover:text-white text-gray-300 font-bold rounded-lg text-[10px] transition">
+                        إغلاق الصفقة وتسوية الأرباح
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function closePosition(id) {
+            const index = openPositions.findIndex(p => p.id === id);
+            if (index !== -1) {
+                const pos = openPositions[index];
+                const finalPnL = pos.currentPnL || 0;
+                
+                // Return principal + profit/loss to balance
+                virtualBalance += (pos.amount + finalPnL);
+                if (virtualBalance < 0) virtualBalance = 0;
+
+                // Add to closed history
+                closedTrades.unshift({
+                    ...pos,
+                    exitPrice: coinsMap[pos.coinKey].price,
+                    finalPnL: finalPnL,
+                    exitTime: new Date().toLocaleTimeString('ar-SA')
+                });
+
+                // Remove from active list
+                openPositions.splice(index, 1);
+
+                updateBalanceDisplay();
+                updateOpenPositionsPnL();
+                renderOpenPositions();
+                renderClosedTrades();
+            }
+        }
+
+        function renderClosedTrades() {
+            const container = document.getElementById('closed-positions-list');
+            if (closedTrades.length === 0) {
+                container.innerHTML = `<div class="glass-card p-4 rounded-xl text-center text-xs text-gray-500">لا يوجد سجل صفقات مغلقة بعد.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            closedTrades.forEach(trade => {
+                const isProf = trade.finalPnL >= 0;
+                const card = document.createElement('div');
+                card.className = `glass-card p-3 rounded-xl border-l-4 ${isProf ? 'border-emerald-500' : 'border-red-500'} space-y-1.5 text-xs`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-white">${trade.coinName} (${trade.type === 'BUY' ? 'شراء' : 'بيع'} - ${trade.leverage}x)</span>
+                        <span class="font-mono ${isProf ? 'text-emerald-400' : 'text-red-400'} font-bold">${isProf ? '+' : ''}$${trade.finalPnL.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-gray-400 font-mono">
+                        <span>دخول: $${trade.entryPrice.toLocaleString()}</span>
+                        <span>خروج: $${trade.exitPrice.toLocaleString()}</span>
+                    </div>
+                    <div class="text-[9px] text-gray-500 text-left font-mono">وقت الإغلاق: ${trade.exitTime}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateBalanceDisplay() {
+            document.getElementById('paper-balance').innerText = "$" + virtualBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
+        }
+
+        function openBalanceModal() { document.getElementById('balance-modal').classList.remove('hidden'); }
+        function closeBalanceModal() { document.getElementById('balance-modal').classList.add('hidden'); }
+        function saveNewBalance() {
+            const val = parseFloat(document.getElementById('new-balance-input').value);
+            if (!isNaN(val) && val >= 0) {
+                virtualBalance = val;
+                updateBalanceDisplay();
+                closeBalanceModal();
+            } else {
+                alert("يرجى إدخال مبلغ صالح!");
+            }
+        }
+
+        // Initialize
+        renderCoinSelector();
+        fetchBinancePrices();
+        setInterval(fetchBinancePrices, 1000);
     </script>
 </body>
 </html>
