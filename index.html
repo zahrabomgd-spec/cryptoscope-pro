@@ -18,6 +18,17 @@
         .price-flash-down { animation: flashDown 0.5s ease; }
         @keyframes flashUp { 0% { color: #10b981; } 100% { color: #ffffff; } }
         @keyframes flashDown { 0% { color: #ef4444; } 100% { color: #ffffff; } }
+        
+        .tab-btn.active { background-color: #f59e0b; color: #000; }
+        
+        /* شريط مؤشر الخوف والطمع */
+        .fear-greed-bar { height: 8px; border-radius: 4px; background: linear-gradient(to right, #ef4444, #f59e0b, #10b981); position: relative; }
+        .fear-greed-indicator { position: absolute; top: -4px; width: 16px; height: 16px; background: white; border-radius: 50%; border: 2px solid #1f2937; transform: translateX(50%); transition: left 0.5s ease; }
+        
+        /* شريط توازن القوة */
+        .power-bar-container { height: 12px; background: #374151; border-radius: 6px; overflow: hidden; display: flex; }
+        .power-bar-buy { background: #10b981; height: 100%; transition: width 0.3s ease; }
+        .power-bar-sell { background: #ef4444; height: 100%; transition: width 0.3s ease; }
     </style>
 </head>
 <body class="min-h-screen flex justify-center items-center p-0 md:p-6">
@@ -32,7 +43,7 @@
                     <h1 class="font-black text-sm text-white">CryptoScope <span class="text-amber-400">Pro</span></h1>
                     <p class="text-[9px] text-emerald-400 flex items-center gap-1" id="connection-status">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>جاري الاتصال...</span>
+                        <span>مباشر من Binance</span>
                     </p>
                 </div>
             </div>
@@ -50,7 +61,7 @@
             <div id="view-analytics" class="space-y-4">
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
-                        <label class="text-xs font-semibold text-gray-400">اختر من بين 20 عملة:</label>
+                        <label class="text-xs font-semibold text-gray-400">اختر العملة:</label>
                         <span id="last-update-time" class="text-[10px] text-amber-400 font-mono">جاري الاتصال...</span>
                     </div>
                     <div id="coin-selector" class="flex space-x-2 space-x-reverse overflow-x-auto pb-1.5"></div>
@@ -93,98 +104,176 @@
 
                 <button onclick="toggleFullAnalysis()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-black rounded-2xl shadow-lg flex items-center justify-center space-x-2 space-x-reverse transition text-xs">
                     <i data-lucide="cpu" class="w-4 h-4"></i>
-                    <span id="analysis-btn-text">إظهار التحليل الفني (<span id="tf-btn-label">يومي</span>)</span>
+                    <span id="analysis-btn-text">إظهار لوحة التحليل الشاملة</span>
                     <i data-lucide="chevron-down" id="analysis-chevron" class="w-4 h-4 transition-transform"></i>
                 </button>
 
-                <!-- FULL ANALYSIS -->
-                <div id="full-analysis-container" class="space-y-3.5 hidden">
+                <!-- FULL ANALYSIS (TABS SYSTEM) -->
+                <div id="full-analysis-container" class="space-y-3 hidden">
                     
-                    <div class="glass-card rounded-2xl p-4 border-l-4 border-emerald-500 glow-green" id="signal-card">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-bold text-white flex items-center space-x-2 space-x-reverse text-xs">
-                                <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
-                                <span>توصية مبنية على مؤشرات حقيقية</span>
-                            </h3>
-                            <span id="signal-badge" class="px-2 py-0.5 bg-gray-800 text-amber-400 text-[11px] font-bold rounded-lg border border-amber-500">جاري التحليل...</span>
+                    <!-- Sub-Tabs Navigation -->
+                    <div class="flex bg-gray-900 p-1 rounded-xl border border-gray-800 text-[11px] mb-2 overflow-x-auto">
+                        <button onclick="switchAnalysisTab('summary')" id="tab-summary" class="tab-btn active flex-1 py-2 px-3 rounded-lg font-bold transition text-center whitespace-nowrap">الملخص والتوصية</button>
+                        <button onclick="switchAnalysisTab('advanced')" id="tab-advanced" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">أدوات متقدمة</button>
+                        <button onclick="switchAnalysisTab('whales')" id="tab-whales" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">الحيتان والسيولة</button>
+                        <button onclick="switchAnalysisTab('sentiment')" id="tab-sentiment" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">مشاعر السوق</button>
+                    </div>
+
+                    <!-- 1. Summary Tab -->
+                    <div id="content-summary" class="space-y-3.5">
+                        <div class="glass-card rounded-2xl p-4 border-l-4 border-emerald-500 glow-green" id="signal-card">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-bold text-white flex items-center space-x-2 space-x-reverse text-xs">
+                                    <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
+                                    <span>التوصية الذكية</span>
+                                </h3>
+                                <span id="signal-badge" class="px-2 py-0.5 bg-gray-800 text-amber-400 text-[11px] font-bold rounded-lg border border-amber-500">جاري التحليل...</span>
+                            </div>
+                            <div class="space-y-2.5 font-mono text-xs">
+                                <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 flex justify-between items-center">
+                                    <div>
+                                        <span class="text-[10px] text-gray-400 block font-sans">سعر الدخول</span>
+                                        <span id="sig-entry" class="font-bold text-emerald-400">-</span>
+                                    </div>
+                                    <button onclick="quickTradeFromSignal('BUY')" class="px-3 py-1.5 bg-emerald-500 text-black font-bold rounded-lg text-[10px] font-sans hover:bg-emerald-400">شراء</button>
+                                </div>
+                                <div class="bg-red-500/10 p-2.5 rounded-xl border border-red-500/20 flex justify-between items-center">
+                                    <div>
+                                        <span class="text-[10px] text-gray-400 block font-sans">وقف الخسارة (SL)</span>
+                                        <span id="sig-sl" class="font-bold text-red-400">-</span>
+                                    </div>
+                                    <i data-lucide="shield-alert" class="w-4 h-4 text-red-400"></i>
+                                </div>
+                                <div class="bg-gray-900/60 p-2.5 rounded-xl border border-gray-800 space-y-1.5">
+                                    <span class="text-[10px] text-gray-400 block font-sans">أهداف جني الأرباح</span>
+                                    <div class="grid grid-cols-3 gap-2 text-center">
+                                        <div class="bg-gray-800/80 p-1.5 rounded-lg">
+                                            <span class="text-[9px] text-gray-400 block font-sans">TP1</span>
+                                            <span id="sig-tp1" class="font-bold text-amber-400">-</span>
+                                        </div>
+                                        <div class="bg-gray-800/80 p-1.5 rounded-lg">
+                                            <span class="text-[9px] text-gray-400 block font-sans">TP2</span>
+                                            <span id="sig-tp2" class="font-bold text-amber-400">-</span>
+                                        </div>
+                                        <div class="bg-gray-800/80 p-1.5 rounded-lg">
+                                            <span class="text-[9px] text-gray-400 block font-sans">TP3</span>
+                                            <span id="sig-tp3" class="font-bold text-amber-400">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="space-y-2.5 font-mono text-xs">
-                            <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 flex justify-between items-center">
-                                <div>
-                                    <span class="text-[10px] text-gray-400 block font-sans">سعر الدخول المقترح</span>
-                                    <span id="sig-entry" class="font-bold text-emerald-400">-</span>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="glass-card rounded-2xl p-3 space-y-2">
+                                <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-1.5">
+                                    <i data-lucide="activity" class="w-3.5 h-3.5 text-amber-400"></i> مؤشرات أساسية
+                                </h4>
+                                <div class="space-y-1 text-[11px]">
+                                    <div class="flex justify-between"><span class="text-gray-400">RSI</span><span id="ind-rsi" class="font-bold text-amber-400">-</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-400">MACD</span><span id="ind-macd" class="font-bold text-emerald-400">-</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-400">EMA 20/50</span><span id="ind-ema" class="font-bold text-gray-400">-</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-400">البولينجر</span><span id="ind-bb-pos" class="font-bold text-white">-</span></div>
                                 </div>
-                                <button onclick="quickTradeFromSignal('BUY')" class="px-3 py-1.5 bg-emerald-500 text-black font-bold rounded-lg text-[10px] font-sans hover:bg-emerald-400">شراء</button>
                             </div>
-                            <div class="bg-red-500/10 p-2.5 rounded-xl border border-red-500/20 flex justify-between items-center">
-                                <div>
-                                    <span class="text-[10px] text-gray-400 block font-sans">وقف الخسارة (SL)</span>
-                                    <span id="sig-sl" class="font-bold text-red-400">-</span>
-                                </div>
-                                <i data-lucide="shield-alert" class="w-4 h-4 text-red-400"></i>
-                            </div>
-                            <div class="bg-gray-900/60 p-2.5 rounded-xl border border-gray-800 space-y-1.5">
-                                <span class="text-[10px] text-gray-400 block font-sans">أهداف جني الأرباح</span>
-                                <div class="grid grid-cols-3 gap-2 text-center">
-                                    <div class="bg-gray-800/80 p-1.5 rounded-lg">
-                                        <span class="text-[9px] text-gray-400 block font-sans">TP1</span>
-                                        <span id="sig-tp1" class="font-bold text-amber-400">-</span>
-                                    </div>
-                                    <div class="bg-gray-800/80 p-1.5 rounded-lg">
-                                        <span class="text-[9px] text-gray-400 block font-sans">TP2</span>
-                                        <span id="sig-tp2" class="font-bold text-amber-400">-</span>
-                                    </div>
-                                    <div class="bg-gray-800/80 p-1.5 rounded-lg">
-                                        <span class="text-[9px] text-gray-400 block font-sans">TP3</span>
-                                        <span id="sig-tp3" class="font-bold text-amber-400">-</span>
-                                    </div>
+                            <div class="glass-card rounded-2xl p-3 space-y-2">
+                                <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-1.5">
+                                    <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-400"></i> قوة السوق
+                                </h4>
+                                <div class="space-y-1 text-[11px]">
+                                    <div class="flex justify-between"><span class="text-gray-400">المشترين</span><span id="ind-buyers" class="font-bold text-emerald-400">-</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-400">نمط شمعة</span><span id="ind-pattern" class="font-bold text-amber-400 text-[10px]">-</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-400">التقلب (ATR)</span><span id="ind-atr" class="font-bold text-white">-</span></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="glass-card rounded-2xl p-3 space-y-2">
-                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-1.5">
-                                <i data-lucide="activity" class="w-3.5 h-3.5 text-amber-400"></i> RSI & MACD
+                    <!-- 2. Advanced Tab (Stoch RSI, Fibonacci, VWAP) -->
+                    <div id="content-advanced" class="space-y-3 hidden">
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="line-chart" class="w-4 h-4 text-amber-400"></i> ستوكاستيك RSI (Stoch RSI)
                             </h4>
                             <div class="space-y-1 text-[11px]">
-                                <div class="flex justify-between"><span class="text-gray-400">RSI-14</span><span id="ind-rsi" class="font-bold text-amber-400">-</span></div>
-                                <div class="flex justify-between"><span class="text-gray-400">MACD</span><span id="ind-macd" class="font-bold text-emerald-400">-</span></div>
-                                <div class="flex justify-between"><span class="text-gray-400">تقاطع MACD</span><span id="ind-macd-cross" class="font-bold text-gray-400">-</span></div>
-                                <div class="flex justify-between"><span class="text-gray-400">EMA 20/50</span><span id="ind-ema" class="font-bold text-gray-400">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">K Line</span><span id="ind-stoch-k" class="font-bold text-white">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">D Line</span><span id="ind-stoch-d" class="font-bold text-white">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">الحالة</span><span id="ind-stoch-state" class="font-bold">-</span></div>
                             </div>
                         </div>
 
-                        <div class="glass-card rounded-2xl p-3 space-y-2">
-                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-1.5">
-                                <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-400"></i> بولينجر & الحجم
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="bar-chart" class="w-4 h-4 text-emerald-400"></i> فيبوناتشي (Fibonacci)
                             </h4>
-                            <div class="space-y-1 text-[11px]">
-                                <div class="flex justify-between"><span class="text-gray-400">موقع السعر</span><span id="ind-bb-pos" class="font-bold text-white">-</span></div>
-                                <div class="flex justify-between"><span class="text-gray-400">عرض البولينجر</span><span id="ind-bb-width" class="font-bold text-white">-</span></div>
-                                <div class="flex justify-between"><span class="text-gray-400">قوة المشترين</span><span id="ind-buyers" class="font-bold text-emerald-400">-</span></div>
-                                <div class="flex justify-between"><span class="text-gray-400">نمط شمعة</span><span id="ind-pattern" class="font-bold text-amber-400">-</span></div>
+                            <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                                <div class="flex justify-between"><span class="text-gray-400">0%</span><span id="ind-fib-0" class="text-gray-300">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">23.6%</span><span id="ind-fib-236" class="text-gray-300">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">38.2%</span><span id="ind-fib-382" class="text-gray-300">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">50.0%</span><span id="ind-fib-50" class="text-amber-400 font-bold">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">61.8%</span><span id="ind-fib-618" class="text-gray-300">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">100%</span><span id="ind-fib-100" class="text-gray-300">-</span></div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="activity" class="w-4 h-4 text-blue-400"></i> VWAP (متوسط السعر المرجح)
+                            </h4>
+                            <div class="flex justify-between items-center text-[11px]">
+                                <span class="text-gray-400">قيمة VWAP:</span>
+                                <span id="ind-vwap" class="font-bold text-white font-mono">-</span>
+                            </div>
+                            <div class="flex justify-between items-center text-[11px]">
+                                <span class="text-gray-400">موقع السعر:</span>
+                                <span id="ind-vwap-pos" class="font-bold">-</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="glass-card rounded-2xl p-3 space-y-2">
-                        <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-1.5">
-                            <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-purple-400"></i> تحليل السوق
-                        </h4>
-                        <div class="grid grid-cols-3 gap-2 text-center text-[10px]">
-                            <div class="bg-gray-900/60 p-2 rounded-lg">
-                                <span class="text-gray-400 block">التقلب (ATR%)</span>
-                                <span id="ind-atr" class="font-bold text-white font-mono">-</span>
+                    <!-- 3. Whales & Order Book Tab -->
+                    <div id="content-whales" class="space-y-3 hidden">
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="scale" class="w-4 h-4 text-purple-400"></i> اختلال دفتر الأوامر (Order Book)
+                            </h4>
+                            <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                                <span id="ob-buy-text">شراء: -</span>
+                                <span id="ob-sell-text">بيع: -</span>
                             </div>
-                            <div class="bg-gray-900/60 p-2 rounded-lg">
-                                <span class="text-gray-400 block">حجم الشراء</span>
-                                <span id="ind-buy-vol" class="font-bold text-emerald-400 font-mono">-</span>
+                            <div class="power-bar-container mb-2">
+                                <div id="ob-buy-bar" class="power-bar-buy w-1/2"></div>
+                                <div id="ob-sell-bar" class="power-bar-sell w-1/2"></div>
                             </div>
-                            <div class="bg-gray-900/60 p-2 rounded-lg">
-                                <span class="text-gray-400 block">حجم البيع</span>
-                                <span id="ind-sell-vol" class="font-bold text-red-400 font-mono">-</span>
+                            <p class="text-[10px] text-gray-500 text-center">يمثل النسبة المئوية لأوامر الشراء/البيع في أول 20 مستوى.</p>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="waves" class="w-4 h-4 text-amber-400"></i> مراقب الحيتان (Whale Alerts)
+                            </h4>
+                            <div id="whale-alerts-list" class="space-y-2 max-h-48 overflow-y-auto">
+                                <div class="text-center text-[10px] text-gray-500 py-4">في انتظار صفقات ضخمة (+$100K)...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Sentiment Tab -->
+                    <div id="content-sentiment" class="space-y-3 hidden">
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="smile" class="w-4 h-4 text-emerald-400"></i> مؤشر الخوف والطمع
+                            </h4>
+                            <div class="text-center mb-2">
+                                <span id="fg-value" class="text-2xl font-black text-white">50</span>
+                                <span id="fg-label" class="text-xs text-gray-400 block">جاري الجلب...</span>
+                            </div>
+                            <div class="fear-greed-bar">
+                                <div id="fg-indicator" class="fear-greed-indicator" style="left: 50%;"></div>
+                            </div>
+                            <div class="flex justify-between text-[9px] text-gray-500 mt-1">
+                                <span>خوف شديد</span>
+                                <span>طمع شديد</span>
                             </div>
                         </div>
                     </div>
@@ -197,7 +286,7 @@
                 <div class="glass-card rounded-2xl p-4 relative">
                     <div class="flex justify-between items-center mb-3">
                         <div>
-                            <span class="text-[10px] text-gray-400 block">رصيد المحفظة التجريبية ($)</span>
+                            <span class="text-[10px] text-gray-400 block">رصيد المحفظة ($)</span>
                             <div class="text-xl font-black text-amber-400 font-mono" id="paper-balance">$10,000.00</div>
                         </div>
                         <button onclick="openBalanceModal()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-xs font-bold border border-gray-700 flex items-center gap-1">
@@ -210,7 +299,7 @@
                             <span id="active-trades-count" class="font-bold text-white">0 صفقة</span>
                         </div>
                         <div class="bg-gray-900/60 p-2 rounded-xl">
-                            <span class="text-gray-400 block text-[10px]">الربح/الخسارة اللحظية</span>
+                            <span class="text-gray-400 block text-[10px]">الربح/الخسارة</span>
                             <span id="total-pnl" class="font-bold text-emerald-400 font-mono">$0.00</span>
                         </div>
                     </div>
@@ -226,7 +315,7 @@
                             <span id="trade-coin-name" class="font-bold text-white">-</span>
                         </div>
                         <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded-xl">
-                            <span class="text-gray-400">السعر الفوري:</span>
+                            <span class="text-gray-400">السعر:</span>
                             <span id="trade-live-price" class="font-bold text-amber-400 font-mono">$0.00</span>
                         </div>
                         <div>
@@ -297,9 +386,8 @@
     <script>
         lucide.createIcons();
 
-        const STORAGE_KEY = 'cryptoscope_pro_state_v3';
-        const KLINES_INTERVAL_MS = 10000; // كل 10 ثوانٍ
-        const WS_BASE = 'wss://stream.binance.com:9443/ws';
+        const STORAGE_KEY = 'cryptoscope_pro_state_v4';
+        const KLINES_INTERVAL_MS = 10000;
         const KLINES_PROXY = 'https://corsproxy.io/?';
 
         const coinsMap = {
@@ -331,10 +419,14 @@
         let openPositions = [];
         let closedTrades = [];
         let isAnalysisOpen = false;
+        let currentAnalysisTab = 'summary';
         let lastKlines = null;
-        let ws = null;
-        let wsReconnectTimer = null;
         let previousPrice = 0;
+        
+        // WebSockets
+        let priceWS = null;
+        let whaleWS = null;
+        let wsReconnectTimer = null;
 
         // ============ Helpers ============
         function generateId() {
@@ -369,32 +461,29 @@
             return { '5m': '5m', '1h': '1h', '24h': '1d', '7d': '1w' }[tf] || '1d';
         }
 
-        // ============ WebSocket: Stream All 20 Coins ============
-        // نبني مسار التدفق لجميع العملات دفعة واحدة:
-        // wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker/...
+        // ============ WebSocket: Price Stream ============
         function buildStreamUrl() {
             const streams = Object.keys(coinsMap).map(sym => `${sym.toLowerCase()}@ticker`).join('/');
             return `wss://stream.binance.com:9443/stream?streams=${streams}`;
         }
 
-        function connectWebSocket() {
-            if (ws && ws.readyState === WebSocket.OPEN) return;
+        function connectPriceWS() {
+            if (priceWS && priceWS.readyState === WebSocket.OPEN) return;
             try {
-                ws = new WebSocket(buildStreamUrl());
+                priceWS = new WebSocket(buildStreamUrl());
             } catch(e) {
                 setConnectionStatus(false, "فشل الاتصال");
                 scheduleReconnect();
                 return;
             }
 
-            ws.onopen = () => {
+            priceWS.onopen = () => {
                 setConnectionStatus(true, "مباشر (WebSocket)");
                 document.getElementById('last-update-time').innerText = "محدث لحظياً";
-                // بعد الاتصال، جلب الشموع للتحليل
                 fetchKlines();
             };
 
-            ws.onmessage = (event) => {
+            priceWS.onmessage = (event) => {
                 try {
                     const msg = JSON.parse(event.data);
                     const t = msg.data;
@@ -402,28 +491,21 @@
                     const coin = coinsMap[t.s];
                     if (!coin) return;
 
-                    // تحديث بيانات العملة
                     coin.price = parseFloat(t.c);
                     coin.change24 = parseFloat(t.P);
                     coin.high = parseFloat(t.h);
                     coin.low = parseFloat(t.l);
                     coin.vol = parseFloat(t.q);
 
-                    // إذا كانت هذه العملة هي النشطة، حدّث الواجهة فوراً
                     if (t.s === currentCoinKey) {
                         updateActivePriceDisplay(coin.price, coin.change24);
                     }
-
-                    // تحديث PnL للصفقات المفتوحة على هذه العملة
                     updateOpenPositionsPnL();
                 } catch(e) {}
             };
 
-            ws.onerror = () => {
-                setConnectionStatus(false, "خطأ في الاتصال");
-            };
-
-            ws.onclose = () => {
+            priceWS.onerror = () => setConnectionStatus(false, "خطأ في الاتصال");
+            priceWS.onclose = () => {
                 setConnectionStatus(false, "انقطع الاتصال");
                 scheduleReconnect();
             };
@@ -431,9 +513,7 @@
 
         function scheduleReconnect() {
             if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
-            wsReconnectTimer = setTimeout(() => {
-                connectWebSocket();
-            }, 3000);
+            wsReconnectTimer = setTimeout(() => connectPriceWS(), 3000);
         }
 
         function setConnectionStatus(online, message) {
@@ -448,37 +528,65 @@
             }
         }
 
-        // ============ تحديث سعر العملة النشطة (مع وميض) ============
-        function updateActivePriceDisplay(price, change) {
-            const priceEl = document.getElementById('active-coin-price');
-            const newText = "$" + price.toLocaleString(undefined, {minimumFractionDigits: 2});
-            if (priceEl.innerText !== newText) {
-                priceEl.innerText = newText;
-                if (previousPrice !== 0) {
-                    priceEl.classList.remove('price-flash-up', 'price-flash-down');
-                    void priceEl.offsetWidth; // trigger reflow
-                    priceEl.classList.add(price > previousPrice ? 'price-flash-up' : 'price-flash-down');
-                }
-                previousPrice = price;
+        // ============ WebSocket: Whale Stream (aggTrade) ============
+        function connectWhaleWS() {
+            if (whaleWS && whaleWS.readyState === WebSocket.OPEN) {
+                if (whaleWS.coinKey === currentCoinKey) return;
+                whaleWS.close();
             }
+            try {
+                whaleWS = new WebSocket(`wss://stream.binance.com:9443/ws/${currentCoinKey.toLowerCase()}@aggTrade`);
+                whaleWS.coinKey = currentCoinKey;
+            } catch(e) { return; }
 
-            const isPos = change >= 0;
-            document.getElementById('active-coin-change').className = `text-xs font-semibold flex items-center justify-end space-x-1 space-x-reverse ${isPos ? 'text-emerald-400' : 'text-red-400'}`;
-            document.getElementById('active-coin-change-text').innerText = (isPos ? "+" : "") + change.toFixed(2) + "%";
+            whaleWS.onmessage = (event) => {
+                try {
+                    const trade = JSON.parse(event.data);
+                    if (trade.e !== 'aggTrade') return;
+                    const price = parseFloat(trade.p);
+                    const qty = parseFloat(trade.q);
+                    const value = price * qty;
+                    const isBuyerMaker = trade.m; // true = sell, false = buy
 
-            const coin = coinsMap[currentCoinKey];
-            document.getElementById('stat-high').innerText = "$" + coin.high.toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('stat-low').innerText = "$" + coin.low.toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('stat-volume').innerText = "$" + (coin.vol / 1e6).toFixed(1) + "M";
-            document.getElementById('trade-live-price').innerText = newText;
+                    if (value >= 100000) { // فقط الصفقات فوق 100 ألف دولار
+                        addWhaleAlert(price, qty, value, isBuyerMaker ? 'SELL' : 'BUY');
+                    }
+                } catch(e) {}
+            };
+
+            whaleWS.onclose = () => {
+                setTimeout(() => {
+                    if (whaleWS.coinKey === currentCoinKey) connectWhaleWS();
+                }, 3000);
+            };
         }
 
-        // ============ Fetch Klines (Candles) ============
+        function addWhaleAlert(price, qty, value, type) {
+            const container = document.getElementById('whale-alerts-list');
+            const emptyMsg = container.querySelector('.text-center');
+            if (emptyMsg) emptyMsg.remove();
+
+            const isBuy = type === 'BUY';
+            const el = document.createElement('div');
+            el.className = `p-2 rounded-lg border ${isBuy ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'} flex justify-between items-center text-[10px] font-mono animate-pulse`;
+            el.innerHTML = `
+                <div class="flex flex-col">
+                    <span class="${isBuy ? 'text-emerald-400' : 'text-red-400'} font-bold">${isBuy ? 'شراء حوت 🐋' : 'بيع حوت 🐋'}</span>
+                    <span class="text-gray-400">${price.toLocaleString()} USDT</span>
+                </div>
+                <div class="text-left">
+                    <span class="text-white font-bold">$${(value/1000).toFixed(0)}K</span>
+                </div>
+            `;
+            container.prepend(el);
+            if (container.children.length > 10) container.lastChild.remove();
+        }
+
+        // ============ Fetch Klines & Order Book ============
         async function fetchKlines() {
             try {
                 const interval = tfToBinance(currentTimeframe);
                 const url = `https://api.binance.com/api/v3/klines?symbol=${currentCoinKey}&interval=${interval}&limit=100`;
-                // محاولة مباشرة أولاً، وإن فشلت نستخدم وسيطاً
                 let res;
                 try {
                     res = await fetch(url);
@@ -508,9 +616,37 @@
             } catch(err) {
                 console.log("Klines error:", err);
             }
+            // جلب دفتر الأوامر
+            fetchOrderBook();
         }
 
-        // ============ Technical Indicators ============
+        async function fetchOrderBook() {
+            try {
+                const url = `https://api.binance.com/api/v3/depth?symbol=${currentCoinKey}&limit=20`;
+                let res;
+                try {
+                    res = await fetch(url);
+                    if (!res.ok) throw new Error("direct failed");
+                } catch(e) {
+                    res = await fetch(KLINES_PROXY + encodeURIComponent(url));
+                }
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.bids || !data.asks) return;
+
+                const bidVol = data.bids.reduce((sum, b) => sum + parseFloat(b[1]), 0);
+                const askVol = data.asks.reduce((sum, a) => sum + parseFloat(a[1]), 0);
+                const total = bidVol + askVol;
+                const buyPct = total > 0 ? (bidVol / total * 100) : 50;
+
+                document.getElementById('ob-buy-text').innerText = `شراء: ${bidVol.toFixed(1)}`;
+                document.getElementById('ob-sell-text').innerText = `بيع: ${askVol.toFixed(1)}`;
+                document.getElementById('ob-buy-bar').style.width = `${buyPct}%`;
+                document.getElementById('ob-sell-bar').style.width = `${100 - buyPct}%`;
+            } catch(e) {}
+        }
+
+        // ============ Indicators Calculations ============
         function computeRSI(closes, period = 14) {
             if (closes.length < period + 1) return null;
             let avgGain = 0, avgLoss = 0;
@@ -526,6 +662,40 @@
             }
             if (avgLoss === 0) return 100;
             return 100 - 100 / (1 + avgGain / avgLoss);
+        }
+
+        function computeStochRSI(closes, period = 14, kPeriod = 3, dPeriod = 3) {
+            if (closes.length < period + kPeriod + dPeriod) return null;
+            
+            // حساب سلسلة RSI
+            let rsiSeries = [];
+            for (let i = period; i < closes.length; i++) {
+                const slice = closes.slice(0, i + 1);
+                rsiSeries.push(computeRSI(slice, period));
+            }
+            if (rsiSeries.length < kPeriod) return null;
+
+            // حساب Stoch RSI
+            const recentRSI = rsiSeries.slice(-kPeriod);
+            const minRSI = Math.min(...recentRSI);
+            const maxRSI = Math.max(...recentRSI);
+            const currentRSI = recentRSI[recentRSI.length - 1];
+            
+            let k = maxRSI === minRSI ? 50 : ((currentRSI - minRSI) / (maxRSI - minRSI)) * 100;
+            
+            // حساب D (المتوسط المتحرك لـ K)
+            let kSeries = [k];
+            for (let i = 1; i < dPeriod; i++) {
+                const prevRSI = rsiSeries.slice(-kPeriod - i, -i);
+                if (prevRSI.length < kPeriod) break;
+                const minR = Math.min(...prevRSI);
+                const maxR = Math.max(...prevRSI);
+                const curR = prevRSI[prevRSI.length - 1];
+                kSeries.push(maxR === minR ? 50 : ((curR - minR) / (maxR - minR)) * 100);
+            }
+            const d = kSeries.reduce((a,b) => a+b, 0) / kSeries.length;
+            
+            return { k, d };
         }
 
         function computeEMA(closes, period) {
@@ -561,13 +731,32 @@
             return { upper: sma + mult * std, middle: sma, lower: sma - mult * std, width: (4 * std) / sma };
         }
 
-        function computeATR(highs, lows, closes, period = 14) {
-            if (highs.length < period + 1) return null;
-            const trs = [];
-            for (let i = 1; i < highs.length; i++) {
-                trs.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1])));
+        function computeVWAP(highs, lows, closes, volumes) {
+            if (closes.length === 0) return null;
+            let cumPV = 0, cumV = 0;
+            // نحسب VWAP لآخر 50 شمعة لتقليل الحمل
+            const start = Math.max(0, closes.length - 50);
+            for (let i = start; i < closes.length; i++) {
+                const tp = (highs[i] + lows[i] + closes[i]) / 3;
+                cumPV += tp * volumes[i];
+                cumV += volumes[i];
             }
-            return trs.slice(-period).reduce((a,b) => a+b, 0) / period;
+            return cumV > 0 ? cumPV / cumV : null;
+        }
+
+        function computeFib(highs, lows, closes) {
+            const high = Math.max(...highs.slice(-100));
+            const low = Math.min(...lows.slice(-100));
+            const diff = high - low;
+            return {
+                high, low,
+                l0: high,
+                l236: high - diff * 0.236,
+                l382: high - diff * 0.382,
+                l50: high - diff * 0.5,
+                l618: high - diff * 0.618,
+                l100: low
+            };
         }
 
         function detectPattern(opens, highs, lows, closes) {
@@ -579,21 +768,22 @@
             const bodyRatio = body / range;
             const upperShadow = highs[i] - Math.max(opens[i], closes[i]);
             const lowerShadow = Math.min(opens[i], closes[i]) - lows[i];
-            if (bodyRatio < 0.1) return "Doji (حياد)";
-            if (lowerShadow > body * 2 && upperShadow < body * 0.5 && closes[i] > opens[i]) return "Hammer (شراء)";
-            if (upperShadow > body * 2 && lowerShadow < body * 0.5 && closes[i] < opens[i]) return "Shooting Star (بيع)";
+            if (bodyRatio < 0.1) return "Doji";
+            if (lowerShadow > body * 2 && upperShadow < body * 0.5 && closes[i] > opens[i]) return "Hammer";
+            if (upperShadow > body * 2 && lowerShadow < body * 0.5 && closes[i] < opens[i]) return "Shooting Star";
             const prevBody = Math.abs(closes[i-1] - opens[i-1]);
-            if (closes[i] > opens[i] && closes[i-1] < opens[i-1] && closes[i] > opens[i-1] && opens[i] < closes[i-1] && body > prevBody) return "Bullish Engulfing (شراء)";
-            if (closes[i] < opens[i] && closes[i-1] > opens[i-1] && opens[i] > closes[i-1] && closes[i] < opens[i-1] && body > prevBody) return "Bearish Engulfing (بيع)";
+            if (closes[i] > opens[i] && closes[i-1] < opens[i-1] && closes[i] > opens[i-1] && opens[i] < closes[i-1] && body > prevBody) return "Bullish Engulfing";
+            if (closes[i] < opens[i] && closes[i-1] > opens[i-1] && opens[i] > closes[i-1] && closes[i] < opens[i-1] && body > prevBody) return "Bearish Engulfing";
             return "—";
         }
 
-        // ============ Analysis Render ============
+        // ============ Render Analysis ============
         function computeAndRenderAnalysis() {
             if (!lastKlines) return;
-            const { opens, highs, lows, closes, buyVols, sellVols } = lastKlines;
+            const { opens, highs, lows, closes, volumes, buyVols, sellVols } = lastKlines;
             const price = closes[closes.length - 1];
 
+            // Summary Tab
             const rsi = computeRSI(closes);
             const rsiEl = document.getElementById('ind-rsi');
             if (rsi !== null) {
@@ -603,15 +793,10 @@
 
             const macd = computeMACD(closes);
             const macdEl = document.getElementById('ind-macd');
-            const crossEl = document.getElementById('ind-macd-cross');
             if (macd) {
                 const bullish = macd.histogram !== null && macd.histogram > 0;
                 macdEl.innerText = bullish ? "صاعد" : "هابط";
                 macdEl.className = `font-bold ${bullish ? 'text-emerald-400' : 'text-red-400'}`;
-                if (macd.signal !== null && macd.histogram !== null) {
-                    crossEl.innerText = macd.histogram > 0 ? "تقاطع صاعد" : "تقاطع هابط";
-                    crossEl.className = `font-bold ${macd.histogram > 0 ? 'text-emerald-400' : 'text-red-400'}`;
-                }
             }
 
             const ema20 = computeEMA(closes, 20);
@@ -625,12 +810,10 @@
 
             const bb = computeBollinger(closes);
             const bbPosEl = document.getElementById('ind-bb-pos');
-            const bbWidthEl = document.getElementById('ind-bb-width');
             if (bb) {
                 const pos = price > bb.upper ? "فوق العلوي" : price < bb.lower ? "تحت السفلي" : "داخل النطاق";
                 bbPosEl.innerText = pos;
                 bbPosEl.className = `font-bold ${price > bb.upper ? 'text-red-400' : price < bb.lower ? 'text-emerald-400' : 'text-gray-300'}`;
-                bbWidthEl.innerText = (bb.width * 100).toFixed(2) + "%";
             }
 
             const totalBuy = buyVols.slice(-10).reduce((a,b) => a+b, 0);
@@ -638,15 +821,44 @@
             const total = totalBuy + totalSell;
             const buyPct = total > 0 ? (totalBuy / total * 100) : 50;
             document.getElementById('ind-buyers').innerText = buyPct.toFixed(0) + "%";
-            document.getElementById('ind-buy-vol').innerText = (totalBuy / 1e3).toFixed(1) + "K";
-            document.getElementById('ind-sell-vol').innerText = (totalSell / 1e3).toFixed(1) + "K";
-
-            const atr = computeATR(highs, lows, closes);
-            if (atr !== null) document.getElementById('ind-atr').innerText = (atr / price * 100).toFixed(2) + "%";
-
+            
             document.getElementById('ind-pattern').innerText = detectPattern(opens, highs, lows, closes);
+            
+            // ATR (للتقلب)
+            const atrSlice = highs.slice(-15).map((h, i) => Math.max(h - lows[lows.length-15+i], Math.abs(h - closes[closes.length-16+i]), Math.abs(lows[lows.length-15+i] - closes[closes.length-16+i])));
+            const atr = atrSlice.reduce((a,b) => a+b, 0) / 14;
+            document.getElementById('ind-atr').innerText = (atr / price * 100).toFixed(2) + "%";
 
             renderSignal(rsi, macd, ema20, ema50, bb, price, buyPct);
+
+            // Advanced Tab
+            const stoch = computeStochRSI(closes);
+            if (stoch) {
+                document.getElementById('ind-stoch-k').innerText = stoch.k.toFixed(1);
+                document.getElementById('ind-stoch-d').innerText = stoch.d.toFixed(1);
+                const state = stoch.k > 80 ? "تشبع شراء" : stoch.k < 20 ? "تشبع بيع" : "محايد";
+                const stateEl = document.getElementById('ind-stoch-state');
+                stateEl.innerText = state;
+                stateEl.className = `font-bold ${stoch.k > 80 ? 'text-red-400' : stoch.k < 20 ? 'text-emerald-400' : 'text-gray-400'}`;
+            }
+
+            const fib = computeFib(highs, lows, closes);
+            const setFib = (id, val) => document.getElementById(id).innerText = '$' + val.toLocaleString(undefined, {maximumFractionDigits: 2});
+            setFib('ind-fib-0', fib.l0);
+            setFib('ind-fib-236', fib.l236);
+            setFib('ind-fib-382', fib.l382);
+            setFib('ind-fib-50', fib.l50);
+            setFib('ind-fib-618', fib.l618);
+            setFib('ind-fib-100', fib.l100);
+
+            const vwap = computeVWAP(highs, lows, closes, volumes);
+            if (vwap) {
+                document.getElementById('ind-vwap').innerText = '$' + vwap.toLocaleString(undefined, {maximumFractionDigits: 2});
+                const vwapPos = price > vwap ? "فوق VWAP (صاعد)" : "تحت VWAP (هابط)";
+                const vwapEl = document.getElementById('ind-vwap-pos');
+                vwapEl.innerText = vwapPos;
+                vwapEl.className = `font-bold ${price > vwap ? 'text-emerald-400' : 'text-red-400'}`;
+            }
         }
 
         function renderSignal(rsi, macd, ema20, ema50, bb, price, buyPct) {
@@ -654,16 +866,13 @@
             const card = document.getElementById('signal-card');
             let score = 0;
             if (rsi !== null) {
-                if (rsi < 30) score += 2;
-                else if (rsi > 70) score -= 2;
-                else if (rsi > 50) score += 0.5;
-                else score -= 0.5;
+                if (rsi < 30) score += 2; else if (rsi > 70) score -= 2;
+                else if (rsi > 50) score += 0.5; else score -= 0.5;
             }
             if (macd && macd.histogram !== null) score += macd.histogram > 0 ? 1.5 : -1.5;
             if (ema20 !== null && ema50 !== null) score += ema20 > ema50 ? 1 : -1;
             if (bb) {
-                if (price < bb.lower) score += 1;
-                else if (price > bb.upper) score -= 1;
+                if (price < bb.lower) score += 1; else if (price > bb.upper) score -= 1;
             }
             if (buyPct > 60) score += 1; else if (buyPct < 40) score -= 1;
 
@@ -679,17 +888,56 @@
             card.className = `glass-card rounded-2xl p-4 border-l-4 ${border} ${glow}`;
 
             const atrPct = Math.max(0.005, Math.min(0.03, Math.abs(score) * 0.005 + 0.005));
-            const entry = price;
-            const sl = score >= 0 ? price * (1 - atrPct * 2) : price * (1 + atrPct * 2);
-            document.getElementById('sig-entry').innerText = "$" + entry.toLocaleString(undefined, {maximumFractionDigits: 2});
-            document.getElementById('sig-sl').innerText = "$" + sl.toLocaleString(undefined, {maximumFractionDigits: 2});
+            document.getElementById('sig-entry').innerText = "$" + price.toLocaleString(undefined, {maximumFractionDigits: 2});
+            document.getElementById('sig-sl').innerText = "$" + (score >= 0 ? price * (1 - atrPct * 2) : price * (1 + atrPct * 2)).toLocaleString(undefined, {maximumFractionDigits: 2});
             const tpMult = score >= 0 ? [1, 2, 3] : [-1, -2, -3];
             document.getElementById('sig-tp1').innerText = "$" + (price * (1 + tpMult[0] * atrPct * 1.5)).toLocaleString(undefined, {maximumFractionDigits: 2});
             document.getElementById('sig-tp2').innerText = "$" + (price * (1 + tpMult[1] * atrPct * 1.5)).toLocaleString(undefined, {maximumFractionDigits: 2});
             document.getElementById('sig-tp3').innerText = "$" + (price * (1 + tpMult[2] * atrPct * 1.5)).toLocaleString(undefined, {maximumFractionDigits: 2});
         }
 
-        // ============ UI ============
+        // ============ Sentiment (Fear & Greed) ============
+        async function fetchFearGreed() {
+            try {
+                const res = await fetch('https://api.alternative.me/fng/?limit=1');
+                const data = await res.json();
+                if (data.data && data.data[0]) {
+                    const val = parseInt(data.data[0].value);
+                    const classification = data.data[0].value_classification;
+                    
+                    let label = "محايد";
+                    if (val <= 25) label = "خوف شديد";
+                    else if (val <= 45) label = "خوف";
+                    else if (val >= 75) label = "طمع شديد";
+                    else if (val >= 55) label = "طمع";
+
+                    document.getElementById('fg-value').innerText = val;
+                    document.getElementById('fg-label').innerText = label;
+                    
+                    const indicator = document.getElementById('fg-indicator');
+                    indicator.style.left = `${val}%`;
+                }
+            } catch(e) {
+                document.getElementById('fg-label').innerText = "تعذر الجلب";
+            }
+        }
+
+        // ============ UI Navigation ============
+        function switchAnalysisTab(tab) {
+            currentAnalysisTab = tab;
+            ['summary', 'advanced', 'whales', 'sentiment'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                if (t === tab) {
+                    btn.className = "tab-btn active flex-1 py-2 px-3 rounded-lg font-bold transition text-center whitespace-nowrap";
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = "tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap";
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
         function renderCoinSelector() {
             const container = document.getElementById('coin-selector');
             container.innerHTML = '';
@@ -705,6 +953,7 @@
                     renderCoinSelector();
                     saveState();
                     fetchKlines();
+                    connectWhaleWS(); // تحديث تدفق الحيتان للعملة الجديدة
                 };
                 btn.className = `flex items-center space-x-1.5 space-x-reverse px-2.5 py-2 rounded-xl font-bold text-xs transition flex-shrink-0 ${
                     isActive ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700'
@@ -714,15 +963,35 @@
             });
         }
 
+        function updateActivePriceDisplay(price, change) {
+            const priceEl = document.getElementById('active-coin-price');
+            const newText = "$" + price.toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (priceEl.innerText !== newText) {
+                priceEl.innerText = newText;
+                if (previousPrice !== 0) {
+                    priceEl.classList.remove('price-flash-up', 'price-flash-down');
+                    void priceEl.offsetWidth;
+                    priceEl.classList.add(price > previousPrice ? 'price-flash-up' : 'price-flash-down');
+                }
+                previousPrice = price;
+            }
+            const isPos = change >= 0;
+            document.getElementById('active-coin-change').className = `text-xs font-semibold flex items-center justify-end space-x-1 space-x-reverse ${isPos ? 'text-emerald-400' : 'text-red-400'}`;
+            document.getElementById('active-coin-change-text').innerText = (isPos ? "+" : "") + change.toFixed(2) + "%";
+            const coin = coinsMap[currentCoinKey];
+            document.getElementById('stat-high').innerText = "$" + coin.high.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('stat-low').innerText = "$" + coin.low.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('stat-volume').innerText = "$" + (coin.vol / 1e6).toFixed(1) + "M";
+            document.getElementById('trade-live-price').innerText = newText;
+        }
+
         function updateUI() {
             const coin = coinsMap[currentCoinKey];
             if (!coin) return;
             document.getElementById('active-coin-icon').src = coin.icon;
             document.getElementById('active-coin-name').innerText = coin.name;
             document.getElementById('active-coin-symbol').innerText = coin.symbol + " (" + currentTimeframe.toUpperCase() + ")";
-            if (coin.price > 0) {
-                updateActivePriceDisplay(coin.price, coin.change24);
-            }
+            if (coin.price > 0) updateActivePriceDisplay(coin.price, coin.change24);
             document.getElementById('trade-coin-name').innerText = `${coin.name} (${coin.symbol})`;
             lucide.createIcons();
         }
@@ -733,8 +1002,6 @@
                 const btn = document.getElementById(`tf-${t}`);
                 btn.className = t === tf ? "px-2 py-1 rounded-lg font-bold transition bg-amber-500 text-black" : "px-2 py-1 rounded-lg font-bold transition text-gray-400";
             });
-            const tfText = tf === '5m' ? '5 دقائق' : (tf === '1h' ? 'ساعة' : (tf === '24h' ? 'يومي' : 'أسبوعي'));
-            document.getElementById('tf-btn-label').innerText = tfText;
             lastKlines = null;
             updateUI();
             saveState();
@@ -752,15 +1019,14 @@
             const container = document.getElementById('full-analysis-container');
             const chevron = document.getElementById('analysis-chevron');
             const btnText = document.getElementById('analysis-btn-text');
-            const tfText = currentTimeframe === '5m' ? '5 دقائق' : (currentTimeframe === '1h' ? 'ساعة' : (currentTimeframe === '24h' ? 'يومي' : 'أسبوعي'));
             if (isAnalysisOpen) {
                 container.classList.remove('hidden');
                 chevron.style.transform = 'rotate(180deg)';
-                btnText.innerHTML = 'إخفاء التحليل الفني';
+                btnText.innerHTML = 'إخفاء لوحة التحليل الشاملة';
             } else {
                 container.classList.add('hidden');
                 chevron.style.transform = 'rotate(0deg)';
-                btnText.innerHTML = `إظهار التحليل الفني (<span id="tf-btn-label">${tfText}</span>)`;
+                btnText.innerHTML = 'إظهار لوحة التحليل الشاملة';
             }
         }
 
@@ -808,9 +1074,7 @@
             openPositions.forEach(pos => {
                 const coin = coinsMap[pos.coinKey];
                 if (!coin || !coin.price) return;
-                const diff = pos.type === 'BUY'
-                    ? (coin.price - pos.entryPrice) / pos.entryPrice
-                    : (pos.entryPrice - coin.price) / pos.entryPrice;
+                const diff = pos.type === 'BUY' ? (coin.price - pos.entryPrice) / pos.entryPrice : (pos.entryPrice - coin.price) / pos.entryPrice;
                 pos.currentPnL = pos.amount * diff * pos.leverage;
                 totalPnL += pos.currentPnL;
             });
@@ -941,16 +1205,20 @@
             const btn = document.getElementById(`tf-${t}`);
             btn.className = t === currentTimeframe ? "px-2 py-1 rounded-lg font-bold transition bg-amber-500 text-black" : "px-2 py-1 rounded-lg font-bold transition text-gray-400";
         });
-        const tfInit = currentTimeframe === '5m' ? '5 دقائق' : (currentTimeframe === '1h' ? 'ساعة' : (currentTimeframe === '24h' ? 'يومي' : 'أسبوعي'));
-        document.getElementById('tf-btn-label').innerText = tfInit;
 
-        // بدء الاتصال المباشر
-        connectWebSocket();
-
-        // تحديث الشموع دورياً (10 ثوانٍ)
+        // تشغيل الاتصالات
+        connectPriceWS();
+        connectWhaleWS();
+        fetchFearGreed();
+        
+        // تحديث دوري
         setInterval(() => {
             if (isAnalysisOpen) fetchKlines();
         }, KLINES_INTERVAL_MS);
+        
+        // تحديث مؤشر الخوف كل 5 دقائق
+        setInterval(fetchFearGreed, 300000);
+
         window.addEventListener('beforeunload', saveState);
     </script>
 </body>
