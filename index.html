@@ -14,6 +14,10 @@
         .glow-red { box-shadow: 0 0 20px rgba(255, 61, 0, 0.2); }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        /* منع الوميض أثناء تحديث الأسعار */
+        .price-updating { transition: color 0.2s ease; }
+        .flash-green { color: #10b981 !important; }
+        .flash-red { color: #ef4444 !important; }
     </style>
 </head>
 <body class="min-h-screen flex justify-center items-center p-0 md:p-6">
@@ -27,9 +31,9 @@
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center font-black text-black text-base shadow-lg">CS</div>
                 <div>
                     <h1 class="font-black text-sm text-white">CryptoScope <span class="text-amber-400">Pro</span></h1>
-                    <p class="text-[9px] text-emerald-400 flex items-center gap-1">
+                    <p class="text-[9px] text-emerald-400 flex items-center gap-1" id="connection-status">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        مباشر من Binance (ثانيتي)
+                        <span>مباشر من Binance (ثانيتي)</span>
                     </p>
                 </div>
             </div>
@@ -47,7 +51,7 @@
             
             <!-- SECTION 1: ANALYTICS VIEW -->
             <div id="view-analytics" class="space-y-4">
-                <!-- Coin Selector Carousel (20 Coins) -->
+                <!-- Coin Selector Carousel -->
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
                         <label class="text-xs font-semibold text-gray-400">اختر من بين 20 عملة قوية:</label>
@@ -63,7 +67,7 @@
                     <div class="absolute top-0 left-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex items-center space-x-3 space-x-reverse">
-                            <img id="active-coin-icon" src="" alt="" class="w-10 h-10 rounded-full">
+                            <img id="active-coin-icon" src="" alt="" class="w-10 h-10 rounded-full" onerror="this.style.display='none'">
                             <div>
                                 <h2 id="active-coin-name" class="text-base font-bold text-white">Bitcoin</h2>
                                 <span id="active-coin-symbol" class="text-[10px] px-2 py-0.5 bg-gray-800 text-amber-400 rounded-md font-mono">BTCUSDT</span>
@@ -170,9 +174,9 @@
                                 <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-400"></i> السيولة والزخم
                             </h4>
                             <div class="space-y-1 text-[11px]">
-                                <div class="flex justify-between"><span class="text-gray-400">قوة المشترين</span><span class="font-bold text-emerald-400">65%</span></div>
-                                <div class="flex justify-between"><span class="text-gray-400">التقلب</span><span class="font-bold text-white">معتدل</span></div>
-                                <div class="flex justify-between"><span class="text-gray-400">الحالة</span><span class="font-bold text-amber-400">فرصة دخول</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">قوة المشترين</span><span id="ind-buyers" class="font-bold text-emerald-400">65%</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">التقلب</span><span id="ind-volatility" class="font-bold text-white">معتدل</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">الحالة</span><span id="ind-state" class="font-bold text-amber-400">فرصة دخول</span></div>
                             </div>
                         </div>
                     </div>
@@ -286,7 +290,7 @@
     </div>
 
     <!-- Balance Modal -->
-    <div id="balance-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div id="balance-modal" onclick="if(event.target===this) closeBalanceModal()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-sm rounded-3xl p-5 space-y-4">
             <h3 class="font-bold text-white text-base">تعديل رصيد المحفظة</h3>
             <p class="text-xs text-gray-400">أدخل الرصيد التجريبي الجديد ($):</p>
@@ -300,6 +304,10 @@
 
     <script>
         lucide.createIcons();
+
+        // ============ إعدادات ============
+        const STORAGE_KEY = 'cryptoscope_pro_state_v1';
+        const FETCH_INTERVAL_MS = 1000;
 
         // 20 Strong Cryptocurrencies Map
         const coinsMap = {
@@ -325,19 +333,73 @@
             RENDERUSDT: { name: "Render", symbol: "RENDERUSDT", icon: "https://assets.coingecko.com/coins/images/11636/large/rndr.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 }
         };
 
+        // ============ الحالة ============
         let currentCoinKey = 'BTCUSDT';
         let currentTimeframe = '24h';
         let virtualBalance = 10000.0;
         let openPositions = [];
         let closedTrades = [];
+        let isAnalysisOpen = false;
+        let fetchController = null;
 
-        // Fetch Binance Prices every 1 second
+        // ============ التخزين المحلي ============
+        function saveState() {
+            try {
+                const state = {
+                    virtualBalance,
+                    openPositions,
+                    closedTrades,
+                    currentCoinKey,
+                    currentTimeframe,
+                    isAnalysisOpen
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.warn("فشل حفظ الحالة:", e);
+            }
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const state = JSON.parse(raw);
+                if (typeof state.virtualBalance === 'number') virtualBalance = state.virtualBalance;
+                if (Array.isArray(state.openPositions)) openPositions = state.openPositions;
+                if (Array.isArray(state.closedTrades)) closedTrades = state.closedTrades;
+                if (state.currentCoinKey && coinsMap[state.currentCoinKey]) currentCoinKey = state.currentCoinKey;
+                if (state.currentTimeframe) currentTimeframe = state.currentTimeframe;
+                if (typeof state.isAnalysisOpen === 'boolean') isAnalysisOpen = state.isAnalysisOpen;
+            } catch (e) {
+                console.warn("فشل تحميل الحالة:", e);
+            }
+        }
+
+        // ============ توليد ID آمن ============
+        function generateId() {
+            if (window.crypto && typeof crypto.randomUUID === 'function') {
+                return crypto.randomUUID();
+            }
+            return Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+        }
+
+        // ============ جلب أسعار Binance ============
         async function fetchBinancePrices() {
+            // إلغاء الطلب السابق إن وجد
+            if (fetchController) {
+                try { fetchController.abort(); } catch(e) {}
+            }
+            fetchController = new AbortController();
+
             try {
                 const symbols = JSON.stringify(Object.keys(coinsMap));
-                const response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${symbols}`);
-                const data = await response.json();
+                const response = await fetch(
+                    `https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(symbols)}`,
+                    { signal: fetchController.signal }
+                );
+                if (!response.ok) throw new Error("HTTP " + response.status);
 
+                const data = await response.json();
                 if (Array.isArray(data)) {
                     data.forEach(item => {
                         if (coinsMap[item.symbol]) {
@@ -349,14 +411,31 @@
                         }
                     });
                 }
-                document.getElementById('last-update-time').innerText = "متصل بـ Binance";
+                setConnectionStatus(true);
                 updateUI();
                 updateOpenPositionsPnL();
             } catch (err) {
-                console.log("Binance API Error", err);
+                if (err.name === 'AbortError') return;
+                console.log("Binance API Error:", err);
+                setConnectionStatus(false);
             }
         }
 
+        function setConnectionStatus(online) {
+            const el = document.getElementById('connection-status');
+            if (!el) return;
+            if (online) {
+                el.className = "text-[9px] text-emerald-400 flex items-center gap-1";
+                el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>مباشر من Binance (ثانيتي)</span>';
+                document.getElementById('last-update-time').innerText = "متصل بـ Binance";
+            } else {
+                el.className = "text-[9px] text-red-400 flex items-center gap-1";
+                el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span><span>انقطع الاتصال - إعادة محاولة...</span>';
+                document.getElementById('last-update-time').innerText = "غير متصل";
+            }
+        }
+
+        // ============ رسم مختار العملات ============
         function renderCoinSelector() {
             const container = document.getElementById('coin-selector');
             container.innerHTML = '';
@@ -364,22 +443,37 @@
                 const coin = coinsMap[key];
                 const isActive = key === currentCoinKey;
                 const btn = document.createElement('button');
-                btn.onclick = () => { currentCoinKey = key; updateUI(); };
+                btn.dataset.coinKey = key;
+                btn.onclick = () => {
+                    currentCoinKey = key;
+                    updateUI();
+                    renderCoinSelector(); // إعادة الرسم لتحديث الزر النشط
+                    saveState();
+                };
                 btn.className = `flex items-center space-x-1.5 space-x-reverse px-2.5 py-2 rounded-xl font-bold text-xs transition flex-shrink-0 ${
                     isActive ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700'
                 }`;
-                btn.innerHTML = `<img src="${coin.icon}" class="w-4 h-4 rounded-full"><span>${key.replace('USDT','')}</span>`;
+                btn.innerHTML = `<img src="${coin.icon}" class="w-4 h-4 rounded-full" onerror="this.style.display='none'"><span>${key.replace('USDT','')}</span>`;
                 container.appendChild(btn);
             });
         }
 
+        // ============ تحديث الواجهة العامة ============
         function updateUI() {
             const coin = coinsMap[currentCoinKey];
+            if (!coin) return;
+
             document.getElementById('active-coin-icon').src = coin.icon;
             document.getElementById('active-coin-name').innerText = coin.name;
             document.getElementById('active-coin-symbol').innerText = coin.symbol + " (" + currentTimeframe.toUpperCase() + ")";
-            document.getElementById('active-coin-price').innerText = "$" + coin.price.toLocaleString(undefined, {minimumFractionDigits: 2});
-            
+
+            // وميض لطيف عند تغير السعر
+            const priceEl = document.getElementById('active-coin-price');
+            const newPriceText = "$" + coin.price.toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (priceEl.innerText !== newPriceText) {
+                priceEl.innerText = newPriceText;
+            }
+
             const changeEl = document.getElementById('active-coin-change');
             const isPos = coin.change24 >= 0;
             changeEl.className = `text-xs font-semibold flex items-center justify-end space-x-1 space-x-reverse ${isPos ? 'text-emerald-400' : 'text-red-400'}`;
@@ -389,24 +483,51 @@
             document.getElementById('stat-low').innerText = "$" + coin.low.toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('stat-volume').innerText = "$" + (coin.vol / 1e6).toFixed(1) + "M";
 
-            // Trading view sync
+            // مزامنة واجهة التداول
             document.getElementById('trade-coin-name').innerText = `${coin.name} (${coin.symbol})`;
             document.getElementById('trade-live-price').innerText = "$" + coin.price.toLocaleString(undefined, {minimumFractionDigits: 2});
 
-            // Signal calculations based on TF & Price
+            // التوصيات
             const p = coin.price;
-            let spreadFactor = currentTimeframe === '5m' ? 0.001 : (currentTimeframe === '1h' ? 0.003 : 0.005);
+            const spreadFactor = currentTimeframe === '5m' ? 0.001 : (currentTimeframe === '1h' ? 0.003 : (currentTimeframe === '24h' ? 0.005 : 0.012));
             document.getElementById('sig-entry').innerText = `$${(p * (1 - spreadFactor)).toFixed(2)} - $${p.toFixed(2)}`;
             document.getElementById('sig-sl').innerText = `$${(p * (1 - spreadFactor * 2.5)).toFixed(2)}`;
             document.getElementById('sig-tp1').innerText = `$${(p * (1 + spreadFactor * 1.5)).toFixed(2)}`;
             document.getElementById('sig-tp2').innerText = `$${(p * (1 + spreadFactor * 3.0)).toFixed(2)}`;
             document.getElementById('sig-tp3').innerText = `$${(p * (1 + spreadFactor * 5.0)).toFixed(2)}`;
 
-            document.getElementById('ind-rsi').innerText = (50 + (coin.change24 * 1.5)).toFixed(1);
+            // مؤشرات تحليلية
+            const rsi = Math.max(5, Math.min(95, 50 + (coin.change24 * 1.5)));
+            document.getElementById('ind-rsi').innerText = rsi.toFixed(1);
+            document.getElementById('ind-macd').innerText = coin.change24 >= 0 ? "صاعد" : "هابط";
+            document.getElementById('ind-macd').className = `font-bold ${coin.change24 >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+            document.getElementById('ind-ma').innerText = coin.change24 >= 0 ? "إيجابي" : "سلبي";
+            document.getElementById('ind-ma').className = `font-bold ${coin.change24 >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+
+            const buyers = Math.round(Math.max(5, Math.min(95, 50 + coin.change24 * 2)));
+            document.getElementById('ind-buyers').innerText = buyers + "%";
+            const volatility = Math.abs(coin.change24) > 8 ? "عالي" : (Math.abs(coin.change24) > 3 ? "معتدل" : "منخفض");
+            document.getElementById('ind-volatility').innerText = volatility;
+            const state = rsi > 70 ? "تشبع شراء" : (rsi < 30 ? "تشبع بيع" : "فرصة دخول");
+            document.getElementById('ind-state').innerText = state;
+
+            // شارة الإشارة
+            const badge = document.getElementById('signal-badge');
+            if (rsi > 70) {
+                badge.className = "px-2 py-0.5 bg-red-500/20 text-red-400 text-[11px] font-bold rounded-lg border border-red-500/30";
+                badge.innerText = "بيع قوي";
+            } else if (rsi < 30) {
+                badge.className = "px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg border border-emerald-500/30";
+                badge.innerText = "شراء قوي";
+            } else {
+                badge.className = "px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[11px] font-bold rounded-lg border border-amber-500/30";
+                badge.innerText = "محايد";
+            }
 
             lucide.createIcons();
         }
 
+        // ============ إطار زمني ============
         function setTimeframe(tf) {
             currentTimeframe = tf;
             ['5m', '1h', '24h', '7d'].forEach(t => {
@@ -420,26 +541,49 @@
             const tfText = tf === '5m' ? '5 دقائق' : (tf === '1h' ? 'ساعة' : (tf === '24h' ? 'يومي' : 'أسبوعي'));
             document.getElementById('tf-btn-label').innerText = tfText;
             document.getElementById('tf-signal-label').innerText = tfText;
+            if (!isAnalysisOpen) {
+                document.getElementById('analysis-btn-text').innerHTML = `إظهار التحليل الفني ومؤشرات (<span id="tf-btn-label">${tfText}</span>)`;
+            }
             updateUI();
+            saveState();
         }
 
-        let isAnalysisOpen = false;
+        // ============ فتح/إغلاق التحليل ============
         function toggleFullAnalysis() {
             isAnalysisOpen = !isAnalysisOpen;
             const container = document.getElementById('full-analysis-container');
             const chevron = document.getElementById('analysis-chevron');
             const btnText = document.getElementById('analysis-btn-text');
+            const tfText = currentTimeframe === '5m' ? '5 دقائق' : (currentTimeframe === '1h' ? 'ساعة' : (currentTimeframe === '24h' ? 'يومي' : 'أسبوعي'));
             if (isAnalysisOpen) {
                 container.classList.remove('hidden');
                 chevron.style.transform = 'rotate(180deg)';
-                btnText.innerText = 'إخفاء التحليل الفني';
+                btnText.innerHTML = 'إخفاء التحليل الفني';
             } else {
                 container.classList.add('hidden');
                 chevron.style.transform = 'rotate(0deg)';
-                btnText.innerText = `إظهار التحليل الفني ومؤشرات (${currentTimeframe.toUpperCase()})`;
+                btnText.innerHTML = `إظهار التحليل الفني ومؤشرات (<span id="tf-btn-label">${tfText}</span>)`;
+            }
+            saveState();
+        }
+
+        function applyAnalysisVisibility() {
+            const container = document.getElementById('full-analysis-container');
+            const chevron = document.getElementById('analysis-chevron');
+            const btnText = document.getElementById('analysis-btn-text');
+            const tfText = currentTimeframe === '5m' ? '5 دقائق' : (currentTimeframe === '1h' ? 'ساعة' : (currentTimeframe === '24h' ? 'يومي' : 'أسبوعي'));
+            if (isAnalysisOpen) {
+                container.classList.remove('hidden');
+                chevron.style.transform = 'rotate(180deg)';
+                btnText.innerHTML = 'إخفاء التحليل الفني';
+            } else {
+                container.classList.add('hidden');
+                chevron.style.transform = 'rotate(0deg)';
+                btnText.innerHTML = `إظهار التحليل الفني ومؤشرات (<span id="tf-btn-label">${tfText}</span>)`;
             }
         }
 
+        // ============ التبويبات ============
         function switchTab(tab) {
             const anEl = document.getElementById('view-analytics');
             const trEl = document.getElementById('view-trading');
@@ -459,7 +603,7 @@
             }
         }
 
-        // Paper Trading Functions
+        // ============ تنفيذ صفقة ============
         function executePaperTrade(type) {
             const amount = parseFloat(document.getElementById('trade-amount-input').value);
             const leverage = parseInt(document.getElementById('trade-leverage-input').value);
@@ -473,37 +617,53 @@
                 return;
             }
 
-            virtualBalance -= amount;
             const coin = coinsMap[currentCoinKey];
-            
+            if (!coin || !coin.price) {
+                alert("لم يتم استلام سعر العملة بعد، انتظر ثانية.");
+                return;
+            }
+
+            virtualBalance -= amount;
             const position = {
-                id: Date.now() + Math.random(),
+                id: generateId(),
                 coinKey: currentCoinKey,
                 coinName: coin.name,
                 type: type,
                 amount: amount,
                 leverage: leverage,
                 entryPrice: coin.price,
-                entryTime: new Date().toLocaleTimeString('ar-SA')
+                entryTime: new Date().toLocaleTimeString('ar-SA'),
+                currentPnL: 0
             };
 
             openPositions.push(position);
             updateBalanceDisplay();
             renderOpenPositions();
             switchTab('trading');
+            saveState();
         }
 
         function quickTradeFromSignal(type) {
             executePaperTrade(type);
         }
 
+        // ============ حساب PnL ============
         function updateOpenPositionsPnL() {
-            if (openPositions.length === 0) return;
+            if (openPositions.length === 0) {
+                const pnlEl = document.getElementById('total-pnl');
+                if (pnlEl) {
+                    pnlEl.innerText = "$0.00";
+                    pnlEl.className = "font-bold font-mono text-emerald-400";
+                }
+                return;
+            }
             let totalPnL = 0;
 
             openPositions.forEach(pos => {
-                const currentPrice = coinsMap[pos.coinKey].price;
-                let priceDiffPercent = 0;
+                const coin = coinsMap[pos.coinKey];
+                if (!coin || !coin.price) return;
+                const currentPrice = coin.price;
+                let priceDiffPercent;
                 if (pos.type === 'BUY') {
                     priceDiffPercent = (currentPrice - pos.entryPrice) / pos.entryPrice;
                 } else {
@@ -514,11 +674,31 @@
                 totalPnL += pnl;
             });
 
-            document.getElementById('total-pnl').innerText = (totalPnL >= 0 ? "+$" : "-$") + Math.abs(totalPnL).toFixed(2);
-            document.getElementById('total-pnl').className = `font-bold font-mono ${totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
-            renderOpenPositions();
+            const pnlEl = document.getElementById('total-pnl');
+            pnlEl.innerText = (totalPnL >= 0 ? "+$" : "-$") + Math.abs(totalPnL).toFixed(2);
+            pnlEl.className = `font-bold font-mono ${totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+
+            // تحديث النصوص فقط داخل البطاقات (بدون إعادة بناء DOM → لا وميض)
+            openPositions.forEach(pos => {
+                const card = document.querySelector(`[data-position-id="${pos.id}"]`);
+                if (!card) return;
+                const pnlSpan = card.querySelector('[data-pnl]');
+                const currentSpan = card.querySelector('[data-current-price]');
+                const coin = coinsMap[pos.coinKey];
+                if (pnlSpan) {
+                    const p = pos.currentPnL || 0;
+                    pnlSpan.textContent = (p >= 0 ? '+' : '') + '$' + p.toFixed(2);
+                    pnlSpan.className = `font-mono font-bold ${p >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+                }
+                if (currentSpan && coin) {
+                    currentSpan.textContent = '$' + coin.price.toLocaleString();
+                }
+                // تحديث لون الحد
+                card.className = `glass-card p-3 rounded-xl border-l-4 ${(pos.currentPnL || 0) >= 0 ? 'border-emerald-500' : 'border-red-500'} space-y-2 text-xs`;
+            });
         }
 
+        // ============ رسم الصفقات المفتوحة ============
         function renderOpenPositions() {
             const container = document.getElementById('open-positions-list');
             document.getElementById('active-trades-count').innerText = openPositions.length + " صفقة";
@@ -530,57 +710,60 @@
 
             container.innerHTML = '';
             openPositions.forEach(pos => {
-                const currentPrice = coinsMap[pos.coinKey].price;
+                const coin = coinsMap[pos.coinKey];
+                const currentPrice = coin ? coin.price : 0;
                 const pnl = pos.currentPnL || 0;
                 const isProf = pnl >= 0;
 
                 const card = document.createElement('div');
+                card.dataset.positionId = pos.id;
                 card.className = `glass-card p-3 rounded-xl border-l-4 ${isProf ? 'border-emerald-500' : 'border-red-500'} space-y-2 text-xs`;
                 card.innerHTML = `
                     <div class="flex justify-between items-center">
                         <span class="font-bold text-white">${pos.coinName} (${pos.type === 'BUY' ? 'شراء Long' : 'بيع Short'} - ${pos.leverage}x)</span>
-                        <span class="font-mono ${isProf ? 'text-emerald-400' : 'text-red-400'} font-bold">${isProf ? '+' : ''}$${pnl.toFixed(2)}</span>
+                        <span data-pnl class="font-mono ${isProf ? 'text-emerald-400' : 'text-red-400'} font-bold">${isProf ? '+' : ''}$${pnl.toFixed(2)}</span>
                     </div>
                     <div class="flex justify-between text-[10px] text-gray-400 font-mono">
                         <span>الدخول: $${pos.entryPrice.toLocaleString()}</span>
-                        <span>الحالي: $${currentPrice.toLocaleString()}</span>
+                        <span>الحالي: <span data-current-price>$${currentPrice.toLocaleString()}</span></span>
                     </div>
-                    <button onclick="closePosition(${pos.id})" class="w-full py-1.5 bg-gray-800 hover:bg-red-500 hover:text-white text-gray-300 font-bold rounded-lg text-[10px] transition">
+                    <button data-close-id="${pos.id}" class="close-btn w-full py-1.5 bg-gray-800 hover:bg-red-500 hover:text-white text-gray-300 font-bold rounded-lg text-[10px] transition">
                         إغلاق الصفقة وتسوية الأرباح
                     </button>
                 `;
+                // ربط حدث الإغلاق برمجياً (أأمن من onclick المضمّن)
+                card.querySelector('.close-btn').addEventListener('click', () => closePosition(pos.id));
                 container.appendChild(card);
             });
         }
 
+        // ============ إغلاق صفقة ============
         function closePosition(id) {
             const index = openPositions.findIndex(p => p.id === id);
-            if (index !== -1) {
-                const pos = openPositions[index];
-                const finalPnL = pos.currentPnL || 0;
-                
-                // Return principal + profit/loss to balance
-                virtualBalance += (pos.amount + finalPnL);
-                if (virtualBalance < 0) virtualBalance = 0;
+            if (index === -1) return;
+            const pos = openPositions[index];
+            const finalPnL = pos.currentPnL || 0;
 
-                // Add to closed history
-                closedTrades.unshift({
-                    ...pos,
-                    exitPrice: coinsMap[pos.coinKey].price,
-                    finalPnL: finalPnL,
-                    exitTime: new Date().toLocaleTimeString('ar-SA')
-                });
+            virtualBalance += (pos.amount + finalPnL);
+            if (virtualBalance < 0) virtualBalance = 0;
 
-                // Remove from active list
-                openPositions.splice(index, 1);
+            closedTrades.unshift({
+                ...pos,
+                exitPrice: coinsMap[pos.coinKey] ? coinsMap[pos.coinKey].price : pos.entryPrice,
+                finalPnL: finalPnL,
+                exitTime: new Date().toLocaleTimeString('ar-SA')
+            });
 
-                updateBalanceDisplay();
-                updateOpenPositionsPnL();
-                renderOpenPositions();
-                renderClosedTrades();
-            }
+            openPositions.splice(index, 1);
+
+            updateBalanceDisplay();
+            updateOpenPositionsPnL();
+            renderOpenPositions();
+            renderClosedTrades();
+            saveState();
         }
 
+        // ============ رسم السجل ============
         function renderClosedTrades() {
             const container = document.getElementById('closed-positions-list');
             if (closedTrades.length === 0) {
@@ -608,11 +791,16 @@
             });
         }
 
+        // ============ الرصيد ============
         function updateBalanceDisplay() {
             document.getElementById('paper-balance').innerText = "$" + virtualBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
         }
 
-        function openBalanceModal() { document.getElementById('balance-modal').classList.remove('hidden'); }
+        function openBalanceModal() {
+            document.getElementById('new-balance-input').value = virtualBalance.toFixed(2);
+            document.getElementById('balance-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('new-balance-input').focus(), 100);
+        }
         function closeBalanceModal() { document.getElementById('balance-modal').classList.add('hidden'); }
         function saveNewBalance() {
             const val = parseFloat(document.getElementById('new-balance-input').value);
@@ -620,15 +808,42 @@
                 virtualBalance = val;
                 updateBalanceDisplay();
                 closeBalanceModal();
+                saveState();
             } else {
                 alert("يرجى إدخال مبلغ صالح!");
             }
         }
 
-        // Initialize
+        // ============ اختصارات لوحة المفاتيح ============
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeBalanceModal();
+        });
+
+        // ============ الإقلاع ============
+        loadState();
         renderCoinSelector();
+        updateBalanceDisplay();
+        renderOpenPositions();
+        renderClosedTrades();
+        applyAnalysisVisibility();
+        // تفعيل الإطار الزمني المحفوظ
+        ['5m', '1h', '24h', '7d'].forEach(t => {
+            const btn = document.getElementById(`tf-${t}`);
+            if (t === currentTimeframe) {
+                btn.className = "px-2 py-1 rounded-lg font-bold transition bg-amber-500 text-black";
+            } else {
+                btn.className = "px-2 py-1 rounded-lg font-bold transition text-gray-400";
+            }
+        });
+        const tfTextInit = currentTimeframe === '5m' ? '5 دقائق' : (currentTimeframe === '1h' ? 'ساعة' : (currentTimeframe === '24h' ? 'يومي' : 'أسبوعي'));
+        document.getElementById('tf-btn-label').innerText = tfTextInit;
+        document.getElementById('tf-signal-label').innerText = tfTextInit;
+
         fetchBinancePrices();
-        setInterval(fetchBinancePrices, 1000);
+        setInterval(fetchBinancePrices, FETCH_INTERVAL_MS);
+
+        // حفظ قبل إغلاق الصفحة
+        window.addEventListener('beforeunload', saveState);
     </script>
 </body>
 </html>
