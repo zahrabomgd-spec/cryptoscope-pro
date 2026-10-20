@@ -21,16 +21,13 @@
         
         .tab-btn.active { background-color: #f59e0b; color: #000; }
         
-        /* شريط مؤشر الخوف والطمع */
         .fear-greed-bar { height: 8px; border-radius: 4px; background: linear-gradient(to right, #ef4444, #f59e0b, #10b981); position: relative; }
         .fear-greed-indicator { position: absolute; top: -4px; width: 16px; height: 16px; background: white; border-radius: 50%; border: 2px solid #1f2937; transform: translateX(50%); transition: left 0.5s ease; }
         
-        /* شريط توازن القوة */
         .power-bar-container { height: 12px; background: #374151; border-radius: 6px; overflow: hidden; display: flex; }
         .power-bar-buy { background: #10b981; height: 100%; transition: width 0.3s ease; }
         .power-bar-sell { background: #ef4444; height: 100%; transition: width 0.3s ease; }
 
-        /* تأثيرات زر التحليل الشامل */
         .ai-btn { background: linear-gradient(45deg, #8b5cf6, #ec4899, #f59e0b); background-size: 200% 200%; animation: gradientShift 3s ease infinite; }
         @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     </style>
@@ -112,21 +109,22 @@
                     <i data-lucide="chevron-down" id="analysis-chevron" class="w-4 h-4 transition-transform"></i>
                 </button>
 
-                <!-- FULL ANALYSIS (TABS SYSTEM) -->
+                <!-- FULL ANALYSIS -->
                 <div id="full-analysis-container" class="space-y-3 hidden">
                     
-                    <!-- AI Aggregate Button -->
+                    <!-- AI Button -->
                     <button onclick="runFullAggregation()" class="ai-btn w-full py-4 text-white font-black rounded-2xl shadow-lg flex items-center justify-center space-x-2 space-x-reverse transition transform hover:scale-[1.02] active:scale-95 border border-purple-500/50">
                         <i data-lucide="brain-circuit" class="w-5 h-5"></i>
                         <span>استخراج التحليل الشامل (AI Decision)</span>
                     </button>
 
-                    <!-- Sub-Tabs Navigation -->
-                    <div class="flex bg-gray-900 p-1 rounded-xl border border-gray-800 text-[11px] mb-2 overflow-x-auto">
-                        <button onclick="switchAnalysisTab('summary')" id="tab-summary" class="tab-btn active flex-1 py-2 px-3 rounded-lg font-bold transition text-center whitespace-nowrap">الملخص</button>
-                        <button onclick="switchAnalysisTab('advanced')" id="tab-advanced" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">متقدمة</button>
-                        <button onclick="switchAnalysisTab('whales')" id="tab-whales" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">الحيتان</button>
-                        <button onclick="switchAnalysisTab('sentiment')" id="tab-sentiment" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">المشاعر</button>
+                    <!-- Sub-Tabs (NOW WITH DERIVATIVES & LIQUIDITY) -->
+                    <div class="flex bg-gray-900 p-1 rounded-xl border border-gray-800 text-[10px] mb-2 overflow-x-auto">
+                        <button onclick="switchAnalysisTab('summary')" id="tab-summary" class="tab-btn active flex-1 py-2 px-2 rounded-lg font-bold transition text-center whitespace-nowrap">الملخص</button>
+                        <button onclick="switchAnalysisTab('advanced')" id="tab-advanced" class="tab-btn flex-1 py-2 px-2 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">متقدمة</button>
+                        <button onclick="switchAnalysisTab('derivatives')" id="tab-derivatives" class="tab-btn flex-1 py-2 px-2 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">المشتقات</button>
+                        <button onclick="switchAnalysisTab('liquidity')" id="tab-liquidity" class="tab-btn flex-1 py-2 px-2 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">السيولة</button>
+                        <button onclick="switchAnalysisTab('sentiment')" id="tab-sentiment" class="tab-btn flex-1 py-2 px-2 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">المشاعر</button>
                     </div>
 
                     <!-- 1. Summary Tab -->
@@ -199,7 +197,7 @@
                         </div>
                     </div>
 
-                    <!-- 2. Advanced Tab -->
+                    <!-- 2. Advanced Tab (Stoch RSI, Fibonacci, VWAP, ICT) -->
                     <div id="content-advanced" class="space-y-3 hidden">
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
@@ -239,21 +237,88 @@
                                 <span id="ind-vwap-pos" class="font-bold">-</span>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- 3. Whales Tab -->
-                    <div id="content-whales" class="space-y-3 hidden">
+                        <!-- ICT Structures -->
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="scale" class="w-4 h-4 text-purple-400"></i> اختلال دفتر الأوامر
+                                <i data-lucide="layers" class="w-4 h-4 text-purple-400"></i> أنماط ICT
+                            </h4>
+                            <div class="space-y-1 text-[11px]">
+                                <div class="flex justify-between"><span class="text-gray-400">Order Block</span><span id="ind-ict-ob" class="font-bold text-gray-400">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Fair Value Gap</span><span id="ind-ict-fvg" class="font-bold text-gray-400">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Liquidity Sweep</span><span id="ind-ict-sweep" class="font-bold text-gray-400">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Derivatives Tab (NEW) -->
+                    <div id="content-derivatives" class="space-y-3 hidden">
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="percent" class="w-4 h-4 text-amber-400"></i> معدل التمويل (Funding Rate)
+                            </h4>
+                            <div class="text-center mb-2">
+                                <span id="deriv-funding" class="text-2xl font-black text-white font-mono">-</span>
+                                <span id="deriv-funding-label" class="text-xs text-gray-400 block">جاري الجلب...</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500 text-center">موجب = المتداولون يدفعون للشراء (Longs). سالب = المتداولون يدفعون للبيع (Shorts).</p>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="bar-chart-2" class="w-4 h-4 text-emerald-400"></i> الفائدة المفتوحة (Open Interest)
+                            </h4>
+                            <div class="flex justify-between items-center text-[11px]">
+                                <span class="text-gray-400">القيمة الحالية:</span>
+                                <span id="deriv-oi" class="font-bold text-white font-mono">-</span>
+                            </div>
+                            <div class="flex justify-between items-center text-[11px]">
+                                <span class="text-gray-400">التغير (24س):</span>
+                                <span id="deriv-oi-change" class="font-bold">-</span>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="scale" class="w-4 h-4 text-purple-400"></i> نسبة الشراء/البيع (Long/Short)
                             </h4>
                             <div class="flex justify-between text-[10px] text-gray-400 mb-1">
-                                <span id="ob-buy-text">شراء: -</span>
-                                <span id="ob-sell-text">بيع: -</span>
+                                <span id="deriv-long-text">Long: -</span>
+                                <span id="deriv-short-text">Short: -</span>
                             </div>
                             <div class="power-bar-container mb-2">
-                                <div id="ob-buy-bar" class="power-bar-buy w-1/2"></div>
-                                <div id="ob-sell-bar" class="power-bar-sell w-1/2"></div>
+                                <div id="deriv-long-bar" class="power-bar-buy w-1/2"></div>
+                                <div id="deriv-short-bar" class="power-bar-sell w-1/2"></div>
+                            </div>
+                            <p class="text-[10px] text-gray-500 text-center">نسبة الحسابات التي تتداول شراءً مقابل بيعاً في العقود الآجلة.</p>
+                        </div>
+                    </div>
+
+                    <!-- 4. Liquidity Tab (NEW) -->
+                    <div id="content-liquidity" class="space-y-3 hidden">
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="droplets" class="w-4 h-4 text-blue-400"></i> جيوب السيولة (Liquidity Pockets)
+                            </h4>
+                            <div class="space-y-2 text-[11px]">
+                                <div class="flex justify-between items-center bg-gray-900/60 p-2 rounded-lg">
+                                    <span class="text-gray-400">سيولة أعلى (Resistance)</span>
+                                    <span id="liq-top" class="font-bold text-red-400 font-mono">-</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-gray-900/60 p-2 rounded-lg">
+                                    <span class="text-gray-400">سيولة أسفل (Support)</span>
+                                    <span id="liq-bottom" class="font-bold text-emerald-400 font-mono">-</span>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-gray-500 text-center">هذه المستويات مبنية على أعلى وأدنى سعر في آخر 100 شمعة، حيث تتركز أوامر وقف الخسارة.</p>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="skull" class="w-4 h-4 text-red-400"></i> مراقب التصفيات (Liquidations)
+                            </h4>
+                            <div id="liquidation-alerts" class="space-y-2 max-h-40 overflow-y-auto">
+                                <div class="text-center text-[10px] text-gray-500 py-4">في انتظار تصفيات كبيرة (+$50K)...</div>
                             </div>
                         </div>
 
@@ -261,13 +326,13 @@
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
                                 <i data-lucide="waves" class="w-4 h-4 text-amber-400"></i> مراقب الحيتان (+$100K)
                             </h4>
-                            <div id="whale-alerts-list" class="space-y-2 max-h-48 overflow-y-auto">
+                            <div id="whale-alerts-list" class="space-y-2 max-h-40 overflow-y-auto">
                                 <div class="text-center text-[10px] text-gray-500 py-4">في انتظار صفقات ضخمة...</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 4. Sentiment Tab -->
+                    <!-- 5. Sentiment Tab -->
                     <div id="content-sentiment" class="space-y-3 hidden">
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
@@ -290,7 +355,7 @@
                 </div>
             </div>
 
-            <!-- TRADING VIEW -->
+            <!-- TRADING VIEW (unchanged) -->
             <div id="view-trading" class="space-y-4 hidden">
                 <div class="glass-card rounded-2xl p-4 relative">
                     <div class="flex justify-between items-center mb-3">
@@ -432,7 +497,7 @@
     <script>
         lucide.createIcons();
 
-        const STORAGE_KEY = 'cryptoscope_pro_state_v5';
+        const STORAGE_KEY = 'cryptoscope_pro_state_v6';
         const KLINES_INTERVAL_MS = 10000;
         const KLINES_PROXY = 'https://corsproxy.io/?';
 
@@ -468,14 +533,14 @@
         let currentAnalysisTab = 'summary';
         let lastKlines = null;
         let previousPrice = 0;
-        
-        // AI Aggregation State
         let aiDecisionResult = null;
         
         let priceWS = null;
         let whaleWS = null;
+        let liquidationWS = null;
         let wsReconnectTimer = null;
         let fearGreedValue = 50;
+        let derivativesData = { funding: null, oi: null, longShort: null };
 
         // ============ Helpers ============
         function generateId() {
@@ -610,15 +675,72 @@
 
         function addWhaleAlert(price, qty, value, type) {
             const container = document.getElementById('whale-alerts-list');
+            if (!container) return;
             const emptyMsg = container.querySelector('.text-center');
             if (emptyMsg) emptyMsg.remove();
 
             const isBuy = type === 'BUY';
             const el = document.createElement('div');
-            el.className = `p-2 rounded-lg border ${isBuy ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'} flex justify-between items-center text-[10px] font-mono animate-pulse`;
+            el.className = `p-2 rounded-lg border ${isBuy ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'} flex justify-between items-center text-[10px] font-mono`;
             el.innerHTML = `
                 <div class="flex flex-col">
                     <span class="${isBuy ? 'text-emerald-400' : 'text-red-400'} font-bold">${isBuy ? 'شراء حوت 🐋' : 'بيع حوت 🐋'}</span>
+                    <span class="text-gray-400">${price.toLocaleString()} USDT</span>
+                </div>
+                <div class="text-left">
+                    <span class="text-white font-bold">$${(value/1000).toFixed(0)}K</span>
+                </div>
+            `;
+            container.prepend(el);
+            if (container.children.length > 10) container.lastChild.remove();
+        }
+
+        // ============ WebSocket: Liquidation Stream (NEW) ============
+        function connectLiquidationWS() {
+            if (liquidationWS && liquidationWS.readyState === WebSocket.OPEN) {
+                if (liquidationWS.coinKey === currentCoinKey) return;
+                liquidationWS.close();
+            }
+            try {
+                // Binance Futures forceOrder stream
+                liquidationWS = new WebSocket(`wss://fstream.binance.com/ws/${currentCoinKey.toLowerCase()}@forceOrder`);
+                liquidationWS.coinKey = currentCoinKey;
+            } catch(e) { return; }
+
+            liquidationWS.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (!msg.o || msg.o.s !== currentCoinKey) return;
+                    const order = msg.o;
+                    const price = parseFloat(order.ap);
+                    const qty = parseFloat(order.z);
+                    const value = price * qty;
+                    if (value >= 50000) { // تصفيات فوق 50 ألف
+                        addLiquidationAlert(price, qty, value, order.S);
+                    }
+                } catch(e) {}
+            };
+
+            liquidationWS.onclose = () => {
+                setTimeout(() => {
+                    if (liquidationWS.coinKey === currentCoinKey) connectLiquidationWS();
+                }, 5000);
+            };
+        }
+
+        function addLiquidationAlert(price, qty, value, side) {
+            const container = document.getElementById('liquidation-alerts');
+            if (!container) return;
+            const emptyMsg = container.querySelector('.text-center');
+            if (emptyMsg) emptyMsg.remove();
+
+            // side: SELL = long liquidated (bearish), BUY = short liquidated (bullish)
+            const isLongLiq = side === 'SELL';
+            const el = document.createElement('div');
+            el.className = `p-2 rounded-lg border ${isLongLiq ? 'bg-red-500/10 border-red-500/20' : 'bg-emerald-500/10 border-emerald-500/20'} flex justify-between items-center text-[10px] font-mono`;
+            el.innerHTML = `
+                <div class="flex flex-col">
+                    <span class="${isLongLiq ? 'text-red-400' : 'text-emerald-400'} font-bold">${isLongLiq ? 'تصفية شراء 💀' : 'تصفية بيع 💀'}</span>
                     <span class="text-gray-400">${price.toLocaleString()} USDT</span>
                 </div>
                 <div class="text-left">
@@ -664,11 +786,12 @@
                 console.log("Klines error:", err);
             }
             fetchOrderBook();
+            fetchDerivativesData();
         }
 
         async function fetchOrderBook() {
             try {
-                const url = `https://api.binance.com/api/v3/depth?symbol=${currentCoinKey}&limit=20`;
+                const url = `https://api.binance.com/api/v3/depth?symbol=${currentCoinKey}&limit=50`;
                 let res;
                 try {
                     res = await fetch(url);
@@ -689,7 +812,70 @@
                 document.getElementById('ob-sell-text').innerText = `بيع: ${askVol.toFixed(1)}`;
                 document.getElementById('ob-buy-bar').style.width = `${buyPct}%`;
                 document.getElementById('ob-sell-bar').style.width = `${100 - buyPct}%`;
+
+                // Liquidity pockets (last 100 candles high/low)
+                if (lastKlines) {
+                    const high100 = Math.max(...lastKlines.highs.slice(-100));
+                    const low100 = Math.min(...lastKlines.lows.slice(-100));
+                    document.getElementById('liq-top').innerText = '$' + high100.toLocaleString(undefined, {maximumFractionDigits: 2});
+                    document.getElementById('liq-bottom').innerText = '$' + low100.toLocaleString(undefined, {maximumFractionDigits: 2});
+                }
             } catch(e) {}
+        }
+
+        async function fetchDerivativesData() {
+            try {
+                // 1. Funding Rate & Open Interest (Binance Futures API)
+                const fapiUrl = `https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${currentCoinKey}`;
+                let res;
+                try {
+                    res = await fetch(fapiUrl);
+                    if (!res.ok) throw new Error("direct failed");
+                } catch(e) {
+                    res = await fetch(KLINES_PROXY + encodeURIComponent(fapiUrl));
+                }
+                if (res.ok) {
+                    const data = await res.json();
+                    const funding = parseFloat(data.lastFundingRate) * 100;
+                    derivativesData.funding = funding;
+                    document.getElementById('deriv-funding').innerText = funding.toFixed(4) + '%';
+                    const label = funding > 0.03 ? "مرتفع (خطر تصحيح)" : funding < -0.01 ? "سالب (فرصة شراء)" : "طبيعي";
+                    document.getElementById('deriv-funding-label').innerText = label;
+                    document.getElementById('deriv-funding').className = `text-2xl font-black font-mono ${funding > 0.03 ? 'text-red-400' : funding < -0.01 ? 'text-emerald-400' : 'text-white'}`;
+                }
+
+                // 2. Open Interest
+                const oiUrl = `https://fapi.binance.com/fapi/v1/openInterest?symbol=${currentCoinKey}`;
+                try {
+                    res = await fetch(oiUrl);
+                    if (res.ok) {
+                        const oiData = await res.json();
+                        const oi = parseFloat(oiData.openInterest);
+                        derivativesData.oi = oi;
+                        document.getElementById('deriv-oi').innerText = oi.toLocaleString(undefined, {maximumFractionDigits: 0});
+                    }
+                } catch(e) {}
+
+                // 3. Long/Short Ratio (Global Accounts)
+                const lsUrl = `https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${currentCoinKey}&period=1h&limit=1`;
+                try {
+                    res = await fetch(lsUrl);
+                    if (res.ok) {
+                        const lsData = await res.json();
+                        if (lsData && lsData[0]) {
+                            const longPct = parseFloat(lsData[0].longAccount) * 100;
+                            const shortPct = parseFloat(lsData[0].shortAccount) * 100;
+                            derivativesData.longShort = { long: longPct, short: shortPct };
+                            document.getElementById('deriv-long-text').innerText = `Long: ${longPct.toFixed(1)}%`;
+                            document.getElementById('deriv-short-text').innerText = `Short: ${shortPct.toFixed(1)}%`;
+                            document.getElementById('deriv-long-bar').style.width = `${longPct}%`;
+                            document.getElementById('deriv-short-bar').style.width = `${shortPct}%`;
+                        }
+                    }
+                } catch(e) {}
+            } catch(e) {
+                console.log("Derivatives fetch error:", e);
+            }
         }
 
         async function fetchFearGreed() {
@@ -804,7 +990,44 @@
             return cumV > 0 ? cumPV / cumV : null;
         }
 
-        // ============ AI Aggregation Logic ============
+        // ICT Patterns Detection
+        function detectICT(opens, highs, lows, closes) {
+            if (closes.length < 5) return { ob: '—', fvg: '—', sweep: '—' };
+            
+            // Order Block: last opposite candle before a strong move
+            const lastCandle = closes.length - 1;
+            const prevCandle = lastCandle - 1;
+            let ob = '—';
+            if (closes[lastCandle] > opens[lastCandle] && closes[prevCandle] < opens[prevCandle]) {
+                ob = 'Bullish OB (دعم)';
+            } else if (closes[lastCandle] < opens[lastCandle] && closes[prevCandle] > opens[prevCandle]) {
+                ob = 'Bearish OB (مقاومة)';
+            }
+
+            // Fair Value Gap: 3-candle pattern
+            let fvg = '—';
+            if (highs[lastCandle-2] < lows[lastCandle]) {
+                fvg = 'Bullish FVG';
+            } else if (lows[lastCandle-2] > highs[lastCandle]) {
+                fvg = 'Bearish FVG';
+            }
+
+            // Liquidity Sweep: recent high/low broken then reversed
+            let sweep = '—';
+            const recentHighs = highs.slice(-10);
+            const recentLows = lows.slice(-10);
+            const maxHigh = Math.max(...recentHighs.slice(0, -1));
+            const minLow = Math.min(...recentLows.slice(0, -1));
+            if (highs[lastCandle] > maxHigh && closes[lastCandle] < maxHigh) {
+                sweep = 'Sweep أعلى (اصطياد)';
+            } else if (lows[lastCandle] < minLow && closes[lastCandle] > minLow) {
+                sweep = 'Sweep أسفل (اصطياد)';
+            }
+
+            return { ob, fvg, sweep };
+        }
+
+        // ============ AI Aggregation (Updated with Derivatives) ============
         function runFullAggregation() {
             if (!lastKlines) {
                 alert("البيانات لم تكتمل بعد، يرجى المحاولة بعد ثوانٍ.");
@@ -864,9 +1087,29 @@
             if (fearGreedValue <= 25) { score += 1; reasons.push({ text: "السوق في حالة خوف شديد (فرصة عكسية)", type: "bull" }); }
             else if (fearGreedValue >= 75) { score -= 1; reasons.push({ text: "السوق في حالة طمع شديد (احتمال تصحيح)", type: "bear" }); }
 
+            // 8. Funding Rate (NEW)
+            if (derivativesData.funding !== null) {
+                if (derivativesData.funding < -0.01) { score += 1.5; reasons.push({ text: "معدل التمويل سالب (فرصة شراء عكسية)", type: "bull" }); }
+                else if (derivativesData.funding > 0.03) { score -= 1.5; reasons.push({ text: "معدل التمويل مرتفع جداً (خطر تصحيح)", type: "bear" }); }
+            }
+
+            // 9. Long/Short Ratio (NEW)
+            if (derivativesData.longShort) {
+                if (derivativesData.longShort.long > 65) { score -= 1; reasons.push({ text: "نسبة الشراء مرتفعة جداً (احتمال تصحيح)", type: "bear" }); }
+                else if (derivativesData.longShort.long < 35) { score += 1; reasons.push({ text: "نسبة الشراء منخفضة جداً (فرصة شراء)", type: "bull" }); }
+            }
+
+            // 10. ICT Patterns (NEW)
+            const ict = detectICT(opens, highs, lows, closes);
+            if (ict.ob.includes('Bullish')) { score += 0.5; reasons.push({ text: "Order Block صاعد (دعم)", type: "bull" }); }
+            else if (ict.ob.includes('Bearish')) { score -= 0.5; reasons.push({ text: "Order Block هابط (مقاومة)", type: "bear" }); }
+            if (ict.sweep.includes('أسفل')) { score += 0.5; reasons.push({ text: "Liquidity Sweep أسفل (اصطياد بيع)", type: "bull" }); }
+            else if (ict.sweep.includes('أعلى')) { score -= 0.5; reasons.push({ text: "Liquidity Sweep أعلى (اصطياد شراء)", type: "bear" }); }
+
             // النتيجة النهائية
             const isBullish = score >= 0;
-            const confidence = Math.min(95, Math.round(Math.abs(score) / 7.5 * 100)); // تحويل النقاط لنسبة ثقة
+            const maxPossibleScore = 11;
+            const confidence = Math.min(95, Math.round(Math.abs(score) / maxPossibleScore * 100));
             
             aiDecisionResult = { isBullish, confidence, price, score };
 
@@ -887,7 +1130,7 @@
             if (isBullish) {
                 verdict.innerText = "صعود 📈";
                 verdict.className = "text-3xl font-black mb-2 text-emerald-400";
-                verdictSub.innerText = "المؤشرات الفنية والبيانات الحالية تدعم الاتجاه الصاعد.";
+                verdictSub.innerText = "المؤشرات الفنية وبيانات المشتقات تدعم الاتجاه الصاعد.";
                 iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3 shadow-2xl bg-emerald-500 shadow-emerald-500/50";
                 icon.setAttribute('data-lucide', 'trending-up');
                 glow.className = "absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30 pointer-events-none bg-emerald-500";
@@ -897,7 +1140,7 @@
             } else {
                 verdict.innerText = "هبوط 📉";
                 verdict.className = "text-3xl font-black mb-2 text-red-400";
-                verdictSub.innerText = "المؤشرات الفنية والبيانات الحالية تدعم الاتجاه الهابط.";
+                verdictSub.innerText = "المؤشرات الفنية وبيانات المشتقات تدعم الاتجاه الهابط.";
                 iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3 shadow-2xl bg-red-500 shadow-red-500/50";
                 icon.setAttribute('data-lucide', 'trending-down');
                 glow.className = "absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30 pointer-events-none bg-red-500";
@@ -912,8 +1155,7 @@
             reasonsContainer.innerHTML = '';
             reasons.forEach(r => {
                 const color = r.type === 'bull' ? 'text-emerald-400' : 'text-red-400';
-                const iconSymbol = r.type === 'bull' ? '•' : '•';
-                reasonsContainer.innerHTML += `<div class="flex items-start gap-2 ${color}"><span>${iconSymbol}</span><span class="text-gray-300">${r.text}</span></div>`;
+                reasonsContainer.innerHTML += `<div class="flex items-start gap-2 ${color}"><span>•</span><span class="text-gray-300">${r.text}</span></div>`;
             });
 
             lucide.createIcons();
@@ -930,7 +1172,7 @@
             closeAIModal();
         }
 
-        // ============ Render Indicators ============
+        // ============ Render ============
         function computeAndRenderAnalysis() {
             if (!lastKlines) return;
             const { opens, highs, lows, closes, volumes, buyVols, sellVols } = lastKlines;
@@ -974,7 +1216,6 @@
             const buyPct = total > 0 ? (totalBuy / total * 100) : 50;
             document.getElementById('ind-buyers').innerText = buyPct.toFixed(0) + "%";
             
-            // ATR
             const atrSlice = highs.slice(-15).map((h, i) => Math.max(h - lows[lows.length-15+i], Math.abs(h - closes[closes.length-16+i]), Math.abs(lows[lows.length-15+i] - closes[closes.length-16+i])));
             const atr = atrSlice.reduce((a,b) => a+b, 0) / 14;
             document.getElementById('ind-atr').innerText = (atr / price * 100).toFixed(2) + "%";
@@ -999,6 +1240,15 @@
                 vwapEl.innerText = vwapPos;
                 vwapEl.className = `font-bold ${price > vwap ? 'text-emerald-400' : 'text-red-400'}`;
             }
+
+            // ICT
+            const ict = detectICT(opens, highs, lows, closes);
+            document.getElementById('ind-ict-ob').innerText = ict.ob;
+            document.getElementById('ind-ict-ob').className = `font-bold ${ict.ob.includes('Bullish') ? 'text-emerald-400' : ict.ob.includes('Bearish') ? 'text-red-400' : 'text-gray-400'}`;
+            document.getElementById('ind-ict-fvg').innerText = ict.fvg;
+            document.getElementById('ind-ict-fvg').className = `font-bold ${ict.fvg.includes('Bullish') ? 'text-emerald-400' : ict.fvg.includes('Bearish') ? 'text-red-400' : 'text-gray-400'}`;
+            document.getElementById('ind-ict-sweep').innerText = ict.sweep;
+            document.getElementById('ind-ict-sweep').className = `font-bold ${ict.sweep.includes('أسفل') ? 'text-emerald-400' : ict.sweep.includes('أعلى') ? 'text-red-400' : 'text-gray-400'}`;
 
             renderSignal(rsi, macd, ema20, ema50, bb, price, buyPct);
         }
@@ -1038,17 +1288,18 @@
             document.getElementById('sig-tp3').innerText = "$" + (price * (1 + tpMult[2] * atrPct * 1.5)).toLocaleString(undefined, {maximumFractionDigits: 2});
         }
 
-        // ============ UI Navigation ============
+        // ============ UI ============
         function switchAnalysisTab(tab) {
             currentAnalysisTab = tab;
-            ['summary', 'advanced', 'whales', 'sentiment'].forEach(t => {
+            ['summary', 'advanced', 'derivatives', 'liquidity', 'sentiment'].forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
                 const content = document.getElementById(`content-${t}`);
+                if (!btn || !content) return;
                 if (t === tab) {
-                    btn.className = "tab-btn active flex-1 py-2 px-3 rounded-lg font-bold transition text-center whitespace-nowrap";
+                    btn.className = "tab-btn active flex-1 py-2 px-2 rounded-lg font-bold transition text-center whitespace-nowrap";
                     content.classList.remove('hidden');
                 } else {
-                    btn.className = "tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap";
+                    btn.className = "tab-btn flex-1 py-2 px-2 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap";
                     content.classList.add('hidden');
                 }
             });
@@ -1065,11 +1316,13 @@
                     currentCoinKey = key;
                     previousPrice = 0;
                     lastKlines = null;
+                    derivativesData = { funding: null, oi: null, longShort: null };
                     updateUI();
                     renderCoinSelector();
                     saveState();
                     fetchKlines();
                     connectWhaleWS();
+                    connectLiquidationWS();
                 };
                 btn.className = `flex items-center space-x-1.5 space-x-reverse px-2.5 py-2 rounded-xl font-bold text-xs transition flex-shrink-0 ${
                     isActive ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700'
@@ -1329,6 +1582,7 @@
 
         connectPriceWS();
         connectWhaleWS();
+        connectLiquidationWS();
         fetchFearGreed();
         
         setInterval(() => {
