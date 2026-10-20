@@ -29,6 +29,10 @@
         .power-bar-container { height: 12px; background: #374151; border-radius: 6px; overflow: hidden; display: flex; }
         .power-bar-buy { background: #10b981; height: 100%; transition: width 0.3s ease; }
         .power-bar-sell { background: #ef4444; height: 100%; transition: width 0.3s ease; }
+
+        /* تأثيرات زر التحليل الشامل */
+        .ai-btn { background: linear-gradient(45deg, #8b5cf6, #ec4899, #f59e0b); background-size: 200% 200%; animation: gradientShift 3s ease infinite; }
+        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     </style>
 </head>
 <body class="min-h-screen flex justify-center items-center p-0 md:p-6">
@@ -111,12 +115,18 @@
                 <!-- FULL ANALYSIS (TABS SYSTEM) -->
                 <div id="full-analysis-container" class="space-y-3 hidden">
                     
+                    <!-- AI Aggregate Button -->
+                    <button onclick="runFullAggregation()" class="ai-btn w-full py-4 text-white font-black rounded-2xl shadow-lg flex items-center justify-center space-x-2 space-x-reverse transition transform hover:scale-[1.02] active:scale-95 border border-purple-500/50">
+                        <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+                        <span>استخراج التحليل الشامل (AI Decision)</span>
+                    </button>
+
                     <!-- Sub-Tabs Navigation -->
                     <div class="flex bg-gray-900 p-1 rounded-xl border border-gray-800 text-[11px] mb-2 overflow-x-auto">
-                        <button onclick="switchAnalysisTab('summary')" id="tab-summary" class="tab-btn active flex-1 py-2 px-3 rounded-lg font-bold transition text-center whitespace-nowrap">الملخص والتوصية</button>
-                        <button onclick="switchAnalysisTab('advanced')" id="tab-advanced" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">أدوات متقدمة</button>
-                        <button onclick="switchAnalysisTab('whales')" id="tab-whales" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">الحيتان والسيولة</button>
-                        <button onclick="switchAnalysisTab('sentiment')" id="tab-sentiment" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">مشاعر السوق</button>
+                        <button onclick="switchAnalysisTab('summary')" id="tab-summary" class="tab-btn active flex-1 py-2 px-3 rounded-lg font-bold transition text-center whitespace-nowrap">الملخص</button>
+                        <button onclick="switchAnalysisTab('advanced')" id="tab-advanced" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">متقدمة</button>
+                        <button onclick="switchAnalysisTab('whales')" id="tab-whales" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">الحيتان</button>
+                        <button onclick="switchAnalysisTab('sentiment')" id="tab-sentiment" class="tab-btn flex-1 py-2 px-3 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">المشاعر</button>
                     </div>
 
                     <!-- 1. Summary Tab -->
@@ -125,7 +135,7 @@
                             <div class="flex justify-between items-center mb-3">
                                 <h3 class="font-bold text-white flex items-center space-x-2 space-x-reverse text-xs">
                                     <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
-                                    <span>التوصية الذكية</span>
+                                    <span>التوصية السريعة</span>
                                 </h3>
                                 <span id="signal-badge" class="px-2 py-0.5 bg-gray-800 text-amber-400 text-[11px] font-bold rounded-lg border border-amber-500">جاري التحليل...</span>
                             </div>
@@ -189,11 +199,11 @@
                         </div>
                     </div>
 
-                    <!-- 2. Advanced Tab (Stoch RSI, Fibonacci, VWAP) -->
+                    <!-- 2. Advanced Tab -->
                     <div id="content-advanced" class="space-y-3 hidden">
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="line-chart" class="w-4 h-4 text-amber-400"></i> ستوكاستيك RSI (Stoch RSI)
+                                <i data-lucide="line-chart" class="w-4 h-4 text-amber-400"></i> ستوكاستيك RSI
                             </h4>
                             <div class="space-y-1 text-[11px]">
                                 <div class="flex justify-between"><span class="text-gray-400">K Line</span><span id="ind-stoch-k" class="font-bold text-white">-</span></div>
@@ -204,7 +214,7 @@
 
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="bar-chart" class="w-4 h-4 text-emerald-400"></i> فيبوناتشي (Fibonacci)
+                                <i data-lucide="bar-chart" class="w-4 h-4 text-emerald-400"></i> فيبوناتشي
                             </h4>
                             <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
                                 <div class="flex justify-between"><span class="text-gray-400">0%</span><span id="ind-fib-0" class="text-gray-300">-</span></div>
@@ -218,10 +228,10 @@
 
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="activity" class="w-4 h-4 text-blue-400"></i> VWAP (متوسط السعر المرجح)
+                                <i data-lucide="activity" class="w-4 h-4 text-blue-400"></i> VWAP
                             </h4>
                             <div class="flex justify-between items-center text-[11px]">
-                                <span class="text-gray-400">قيمة VWAP:</span>
+                                <span class="text-gray-400">القيمة:</span>
                                 <span id="ind-vwap" class="font-bold text-white font-mono">-</span>
                             </div>
                             <div class="flex justify-between items-center text-[11px]">
@@ -231,11 +241,11 @@
                         </div>
                     </div>
 
-                    <!-- 3. Whales & Order Book Tab -->
+                    <!-- 3. Whales Tab -->
                     <div id="content-whales" class="space-y-3 hidden">
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="scale" class="w-4 h-4 text-purple-400"></i> اختلال دفتر الأوامر (Order Book)
+                                <i data-lucide="scale" class="w-4 h-4 text-purple-400"></i> اختلال دفتر الأوامر
                             </h4>
                             <div class="flex justify-between text-[10px] text-gray-400 mb-1">
                                 <span id="ob-buy-text">شراء: -</span>
@@ -245,15 +255,14 @@
                                 <div id="ob-buy-bar" class="power-bar-buy w-1/2"></div>
                                 <div id="ob-sell-bar" class="power-bar-sell w-1/2"></div>
                             </div>
-                            <p class="text-[10px] text-gray-500 text-center">يمثل النسبة المئوية لأوامر الشراء/البيع في أول 20 مستوى.</p>
                         </div>
 
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="waves" class="w-4 h-4 text-amber-400"></i> مراقب الحيتان (Whale Alerts)
+                                <i data-lucide="waves" class="w-4 h-4 text-amber-400"></i> مراقب الحيتان (+$100K)
                             </h4>
                             <div id="whale-alerts-list" class="space-y-2 max-h-48 overflow-y-auto">
-                                <div class="text-center text-[10px] text-gray-500 py-4">في انتظار صفقات ضخمة (+$100K)...</div>
+                                <div class="text-center text-[10px] text-gray-500 py-4">في انتظار صفقات ضخمة...</div>
                             </div>
                         </div>
                     </div>
@@ -262,7 +271,7 @@
                     <div id="content-sentiment" class="space-y-3 hidden">
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="smile" class="w-4 h-4 text-emerald-400"></i> مؤشر الخوف والطمع
+                                <i data-lucide="smile" class="w-4 h-4 text-emerald-400"></i> الخوف والطمع
                             </h4>
                             <div class="text-center mb-2">
                                 <span id="fg-value" class="text-2xl font-black text-white">50</span>
@@ -371,6 +380,43 @@
 
     </div>
 
+    <!-- AI Decision Modal -->
+    <div id="ai-modal" onclick="if(event.target===this) closeAIModal()" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-3xl p-6 space-y-5 text-center relative overflow-hidden" id="ai-modal-content">
+            <div id="ai-glow" class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30 pointer-events-none"></div>
+            
+            <div class="relative z-10">
+                <div id="ai-icon-container" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3 shadow-2xl">
+                    <i data-lucide="trending-up" id="ai-icon" class="w-10 h-10 text-white"></i>
+                </div>
+                
+                <h2 class="text-xs text-gray-400 font-bold tracking-widest uppercase mb-1">التحليل الشامل للذكاء الاصطناعي</h2>
+                <h1 id="ai-verdict" class="text-3xl font-black mb-2">-</h1>
+                <p id="ai-verdict-sub" class="text-sm text-gray-300 mb-4">-</p>
+                
+                <div class="bg-gray-900/80 rounded-2xl p-3 mb-4 border border-gray-700">
+                    <div class="flex justify-between items-center text-xs mb-1">
+                        <span class="text-gray-400">نسبة الثقة</span>
+                        <span id="ai-confidence" class="font-bold text-white font-mono">0%</span>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="ai-confidence-bar" class="h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="text-right space-y-2 mb-6 max-h-40 overflow-y-auto px-1">
+                    <h3 class="text-[10px] text-gray-500 font-bold uppercase border-b border-gray-800 pb-1 mb-2">لماذا هذا القرار؟</h3>
+                    <div id="ai-reasons" class="space-y-1.5 text-[11px]"></div>
+                </div>
+
+                <div class="flex space-x-2 space-x-reverse">
+                    <button id="ai-trade-btn" onclick="tradeFromAI()" class="flex-1 py-3 text-black font-black rounded-xl text-sm transition shadow-lg">تنفيذ الصفقة</button>
+                    <button onclick="closeAIModal()" class="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-xl text-sm transition">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Balance Modal -->
     <div id="balance-modal" onclick="if(event.target===this) closeBalanceModal()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-sm rounded-3xl p-5 space-y-4">
@@ -386,7 +432,7 @@
     <script>
         lucide.createIcons();
 
-        const STORAGE_KEY = 'cryptoscope_pro_state_v4';
+        const STORAGE_KEY = 'cryptoscope_pro_state_v5';
         const KLINES_INTERVAL_MS = 10000;
         const KLINES_PROXY = 'https://corsproxy.io/?';
 
@@ -423,10 +469,13 @@
         let lastKlines = null;
         let previousPrice = 0;
         
-        // WebSockets
+        // AI Aggregation State
+        let aiDecisionResult = null;
+        
         let priceWS = null;
         let whaleWS = null;
         let wsReconnectTimer = null;
+        let fearGreedValue = 50;
 
         // ============ Helpers ============
         function generateId() {
@@ -528,7 +577,7 @@
             }
         }
 
-        // ============ WebSocket: Whale Stream (aggTrade) ============
+        // ============ WebSocket: Whale Stream ============
         function connectWhaleWS() {
             if (whaleWS && whaleWS.readyState === WebSocket.OPEN) {
                 if (whaleWS.coinKey === currentCoinKey) return;
@@ -546,10 +595,8 @@
                     const price = parseFloat(trade.p);
                     const qty = parseFloat(trade.q);
                     const value = price * qty;
-                    const isBuyerMaker = trade.m; // true = sell, false = buy
-
-                    if (value >= 100000) { // فقط الصفقات فوق 100 ألف دولار
-                        addWhaleAlert(price, qty, value, isBuyerMaker ? 'SELL' : 'BUY');
+                    if (value >= 100000) {
+                        addWhaleAlert(price, qty, value, trade.m ? 'SELL' : 'BUY');
                     }
                 } catch(e) {}
             };
@@ -582,7 +629,7 @@
             if (container.children.length > 10) container.lastChild.remove();
         }
 
-        // ============ Fetch Klines & Order Book ============
+        // ============ Fetch Data ============
         async function fetchKlines() {
             try {
                 const interval = tfToBinance(currentTimeframe);
@@ -616,7 +663,6 @@
             } catch(err) {
                 console.log("Klines error:", err);
             }
-            // جلب دفتر الأوامر
             fetchOrderBook();
         }
 
@@ -646,7 +692,30 @@
             } catch(e) {}
         }
 
-        // ============ Indicators Calculations ============
+        async function fetchFearGreed() {
+            try {
+                const res = await fetch('https://api.alternative.me/fng/?limit=1');
+                const data = await res.json();
+                if (data.data && data.data[0]) {
+                    fearGreedValue = parseInt(data.data[0].value);
+                    const val = fearGreedValue;
+                    
+                    let label = "محايد";
+                    if (val <= 25) label = "خوف شديد";
+                    else if (val <= 45) label = "خوف";
+                    else if (val >= 75) label = "طمع شديد";
+                    else if (val >= 55) label = "طمع";
+
+                    document.getElementById('fg-value').innerText = val;
+                    document.getElementById('fg-label').innerText = label;
+                    document.getElementById('fg-indicator').style.left = `${val}%`;
+                }
+            } catch(e) {
+                document.getElementById('fg-label').innerText = "تعذر الجلب";
+            }
+        }
+
+        // ============ Indicators ============
         function computeRSI(closes, period = 14) {
             if (closes.length < period + 1) return null;
             let avgGain = 0, avgLoss = 0;
@@ -666,24 +735,17 @@
 
         function computeStochRSI(closes, period = 14, kPeriod = 3, dPeriod = 3) {
             if (closes.length < period + kPeriod + dPeriod) return null;
-            
-            // حساب سلسلة RSI
             let rsiSeries = [];
             for (let i = period; i < closes.length; i++) {
                 const slice = closes.slice(0, i + 1);
                 rsiSeries.push(computeRSI(slice, period));
             }
             if (rsiSeries.length < kPeriod) return null;
-
-            // حساب Stoch RSI
             const recentRSI = rsiSeries.slice(-kPeriod);
             const minRSI = Math.min(...recentRSI);
             const maxRSI = Math.max(...recentRSI);
             const currentRSI = recentRSI[recentRSI.length - 1];
-            
             let k = maxRSI === minRSI ? 50 : ((currentRSI - minRSI) / (maxRSI - minRSI)) * 100;
-            
-            // حساب D (المتوسط المتحرك لـ K)
             let kSeries = [k];
             for (let i = 1; i < dPeriod; i++) {
                 const prevRSI = rsiSeries.slice(-kPeriod - i, -i);
@@ -694,7 +756,6 @@
                 kSeries.push(maxR === minR ? 50 : ((curR - minR) / (maxR - minR)) * 100);
             }
             const d = kSeries.reduce((a,b) => a+b, 0) / kSeries.length;
-            
             return { k, d };
         }
 
@@ -734,7 +795,6 @@
         function computeVWAP(highs, lows, closes, volumes) {
             if (closes.length === 0) return null;
             let cumPV = 0, cumV = 0;
-            // نحسب VWAP لآخر 50 شمعة لتقليل الحمل
             const start = Math.max(0, closes.length - 50);
             for (let i = start; i < closes.length; i++) {
                 const tp = (highs[i] + lows[i] + closes[i]) / 3;
@@ -744,46 +804,138 @@
             return cumV > 0 ? cumPV / cumV : null;
         }
 
-        function computeFib(highs, lows, closes) {
-            const high = Math.max(...highs.slice(-100));
-            const low = Math.min(...lows.slice(-100));
-            const diff = high - low;
-            return {
-                high, low,
-                l0: high,
-                l236: high - diff * 0.236,
-                l382: high - diff * 0.382,
-                l50: high - diff * 0.5,
-                l618: high - diff * 0.618,
-                l100: low
-            };
+        // ============ AI Aggregation Logic ============
+        function runFullAggregation() {
+            if (!lastKlines) {
+                alert("البيانات لم تكتمل بعد، يرجى المحاولة بعد ثوانٍ.");
+                return;
+            }
+            const { opens, highs, lows, closes, volumes, buyVols, sellVols } = lastKlines;
+            const price = closes[closes.length - 1];
+
+            let score = 0;
+            let reasons = [];
+            
+            // 1. RSI
+            const rsi = computeRSI(closes);
+            if (rsi !== null) {
+                if (rsi < 30) { score += 2; reasons.push({ text: "RSI في منطقة تشبع بيع (فرصة شراء)", type: "bull" }); }
+                else if (rsi > 70) { score -= 2; reasons.push({ text: "RSI في منطقة تشبع شراء (خطر هبوط)", type: "bear" }); }
+                else if (rsi > 50) { score += 0.5; reasons.push({ text: "RSI يميل للصعود", type: "bull" }); }
+                else { score -= 0.5; reasons.push({ text: "RSI يميل للهبوط", type: "bear" }); }
+            }
+
+            // 2. MACD
+            const macd = computeMACD(closes);
+            if (macd && macd.histogram !== null) {
+                if (macd.histogram > 0) { score += 1.5; reasons.push({ text: "MACD يعطي تقاطعاً صاعداً", type: "bull" }); }
+                else { score -= 1.5; reasons.push({ text: "MACD يعطي تقاطعاً هابطاً", type: "bear" }); }
+            }
+
+            // 3. EMA
+            const ema20 = computeEMA(closes, 20);
+            const ema50 = computeEMA(closes, 50);
+            if (ema20 !== null && ema50 !== null) {
+                if (ema20 > ema50) { score += 1; reasons.push({ text: "المتوسطات الأسية إيجابية (EMA20 > EMA50)", type: "bull" }); }
+                else { score -= 1; reasons.push({ text: "المتوسطات الأسية سلبية (EMA20 < EMA50)", type: "bear" }); }
+            }
+
+            // 4. Stoch RSI
+            const stoch = computeStochRSI(closes);
+            if (stoch) {
+                if (stoch.k < 20) { score += 1; reasons.push({ text: "Stoch RSI في تشبع بيع", type: "bull" }); }
+                else if (stoch.k > 80) { score -= 1; reasons.push({ text: "Stoch RSI في تشبع شراء", type: "bear" }); }
+            }
+
+            // 5. VWAP
+            const vwap = computeVWAP(highs, lows, closes, volumes);
+            if (vwap) {
+                if (price > vwap) { score += 1; reasons.push({ text: "السعر يتداول فوق VWAP", type: "bull" }); }
+                else { score -= 1; reasons.push({ text: "السعر يتداول تحت VWAP", type: "bear" }); }
+            }
+
+            // 6. Order Book (السيولة)
+            const buyBar = document.getElementById('ob-buy-bar');
+            const buyPct = parseFloat(buyBar.style.width) || 50;
+            if (buyPct > 60) { score += 1; reasons.push({ text: "سيولة الشراء أقوى في دفتر الأوامر", type: "bull" }); }
+            else if (buyPct < 40) { score -= 1; reasons.push({ text: "سيولة البيع أقوى في دفتر الأوامر", type: "bear" }); }
+
+            // 7. Fear & Greed
+            if (fearGreedValue <= 25) { score += 1; reasons.push({ text: "السوق في حالة خوف شديد (فرصة عكسية)", type: "bull" }); }
+            else if (fearGreedValue >= 75) { score -= 1; reasons.push({ text: "السوق في حالة طمع شديد (احتمال تصحيح)", type: "bear" }); }
+
+            // النتيجة النهائية
+            const isBullish = score >= 0;
+            const confidence = Math.min(95, Math.round(Math.abs(score) / 7.5 * 100)); // تحويل النقاط لنسبة ثقة
+            
+            aiDecisionResult = { isBullish, confidence, price, score };
+
+            // عرض النافذة المنبثقة
+            const modal = document.getElementById('ai-modal');
+            const verdict = document.getElementById('ai-verdict');
+            const verdictSub = document.getElementById('ai-verdict-sub');
+            const iconContainer = document.getElementById('ai-icon-container');
+            const icon = document.getElementById('ai-icon');
+            const glow = document.getElementById('ai-glow');
+            const confidenceBar = document.getElementById('ai-confidence-bar');
+            const confidenceText = document.getElementById('ai-confidence');
+            const reasonsContainer = document.getElementById('ai-reasons');
+            const tradeBtn = document.getElementById('ai-trade-btn');
+
+            modal.classList.remove('hidden');
+
+            if (isBullish) {
+                verdict.innerText = "صعود 📈";
+                verdict.className = "text-3xl font-black mb-2 text-emerald-400";
+                verdictSub.innerText = "المؤشرات الفنية والبيانات الحالية تدعم الاتجاه الصاعد.";
+                iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3 shadow-2xl bg-emerald-500 shadow-emerald-500/50";
+                icon.setAttribute('data-lucide', 'trending-up');
+                glow.className = "absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30 pointer-events-none bg-emerald-500";
+                confidenceBar.className = "h-full rounded-full transition-all duration-1000 ease-out bg-emerald-500";
+                tradeBtn.className = "flex-1 py-3 text-black font-black rounded-xl text-sm transition shadow-lg bg-emerald-500 hover:bg-emerald-400";
+                tradeBtn.innerText = "تنفيذ شراء (LONG)";
+            } else {
+                verdict.innerText = "هبوط 📉";
+                verdict.className = "text-3xl font-black mb-2 text-red-400";
+                verdictSub.innerText = "المؤشرات الفنية والبيانات الحالية تدعم الاتجاه الهابط.";
+                iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3 shadow-2xl bg-red-500 shadow-red-500/50";
+                icon.setAttribute('data-lucide', 'trending-down');
+                glow.className = "absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30 pointer-events-none bg-red-500";
+                confidenceBar.className = "h-full rounded-full transition-all duration-1000 ease-out bg-red-500";
+                tradeBtn.className = "flex-1 py-3 text-black font-black rounded-xl text-sm transition shadow-lg bg-red-500 hover:bg-red-400";
+                tradeBtn.innerText = "تنفيذ بيع (SHORT)";
+            }
+
+            confidenceText.innerText = confidence + "%";
+            setTimeout(() => { confidenceBar.style.width = confidence + "%"; }, 100);
+
+            reasonsContainer.innerHTML = '';
+            reasons.forEach(r => {
+                const color = r.type === 'bull' ? 'text-emerald-400' : 'text-red-400';
+                const iconSymbol = r.type === 'bull' ? '•' : '•';
+                reasonsContainer.innerHTML += `<div class="flex items-start gap-2 ${color}"><span>${iconSymbol}</span><span class="text-gray-300">${r.text}</span></div>`;
+            });
+
+            lucide.createIcons();
         }
 
-        function detectPattern(opens, highs, lows, closes) {
-            if (closes.length < 3) return "—";
-            const i = closes.length - 1;
-            const body = Math.abs(closes[i] - opens[i]);
-            const range = highs[i] - lows[i];
-            if (range === 0) return "—";
-            const bodyRatio = body / range;
-            const upperShadow = highs[i] - Math.max(opens[i], closes[i]);
-            const lowerShadow = Math.min(opens[i], closes[i]) - lows[i];
-            if (bodyRatio < 0.1) return "Doji";
-            if (lowerShadow > body * 2 && upperShadow < body * 0.5 && closes[i] > opens[i]) return "Hammer";
-            if (upperShadow > body * 2 && lowerShadow < body * 0.5 && closes[i] < opens[i]) return "Shooting Star";
-            const prevBody = Math.abs(closes[i-1] - opens[i-1]);
-            if (closes[i] > opens[i] && closes[i-1] < opens[i-1] && closes[i] > opens[i-1] && opens[i] < closes[i-1] && body > prevBody) return "Bullish Engulfing";
-            if (closes[i] < opens[i] && closes[i-1] > opens[i-1] && opens[i] > closes[i-1] && closes[i] < opens[i-1] && body > prevBody) return "Bearish Engulfing";
-            return "—";
+        function closeAIModal() {
+            document.getElementById('ai-modal').classList.add('hidden');
+            document.getElementById('ai-confidence-bar').style.width = '0%';
         }
 
-        // ============ Render Analysis ============
+        function tradeFromAI() {
+            if (!aiDecisionResult) return;
+            executePaperTrade(aiDecisionResult.isBullish ? 'BUY' : 'SELL');
+            closeAIModal();
+        }
+
+        // ============ Render Indicators ============
         function computeAndRenderAnalysis() {
             if (!lastKlines) return;
             const { opens, highs, lows, closes, volumes, buyVols, sellVols } = lastKlines;
             const price = closes[closes.length - 1];
 
-            // Summary Tab
             const rsi = computeRSI(closes);
             const rsiEl = document.getElementById('ind-rsi');
             if (rsi !== null) {
@@ -822,16 +974,12 @@
             const buyPct = total > 0 ? (totalBuy / total * 100) : 50;
             document.getElementById('ind-buyers').innerText = buyPct.toFixed(0) + "%";
             
-            document.getElementById('ind-pattern').innerText = detectPattern(opens, highs, lows, closes);
-            
-            // ATR (للتقلب)
+            // ATR
             const atrSlice = highs.slice(-15).map((h, i) => Math.max(h - lows[lows.length-15+i], Math.abs(h - closes[closes.length-16+i]), Math.abs(lows[lows.length-15+i] - closes[closes.length-16+i])));
             const atr = atrSlice.reduce((a,b) => a+b, 0) / 14;
             document.getElementById('ind-atr').innerText = (atr / price * 100).toFixed(2) + "%";
 
-            renderSignal(rsi, macd, ema20, ema50, bb, price, buyPct);
-
-            // Advanced Tab
+            // Stoch RSI
             const stoch = computeStochRSI(closes);
             if (stoch) {
                 document.getElementById('ind-stoch-k').innerText = stoch.k.toFixed(1);
@@ -842,15 +990,7 @@
                 stateEl.className = `font-bold ${stoch.k > 80 ? 'text-red-400' : stoch.k < 20 ? 'text-emerald-400' : 'text-gray-400'}`;
             }
 
-            const fib = computeFib(highs, lows, closes);
-            const setFib = (id, val) => document.getElementById(id).innerText = '$' + val.toLocaleString(undefined, {maximumFractionDigits: 2});
-            setFib('ind-fib-0', fib.l0);
-            setFib('ind-fib-236', fib.l236);
-            setFib('ind-fib-382', fib.l382);
-            setFib('ind-fib-50', fib.l50);
-            setFib('ind-fib-618', fib.l618);
-            setFib('ind-fib-100', fib.l100);
-
+            // VWAP
             const vwap = computeVWAP(highs, lows, closes, volumes);
             if (vwap) {
                 document.getElementById('ind-vwap').innerText = '$' + vwap.toLocaleString(undefined, {maximumFractionDigits: 2});
@@ -859,6 +999,8 @@
                 vwapEl.innerText = vwapPos;
                 vwapEl.className = `font-bold ${price > vwap ? 'text-emerald-400' : 'text-red-400'}`;
             }
+
+            renderSignal(rsi, macd, ema20, ema50, bb, price, buyPct);
         }
 
         function renderSignal(rsi, macd, ema20, ema50, bb, price, buyPct) {
@@ -896,32 +1038,6 @@
             document.getElementById('sig-tp3').innerText = "$" + (price * (1 + tpMult[2] * atrPct * 1.5)).toLocaleString(undefined, {maximumFractionDigits: 2});
         }
 
-        // ============ Sentiment (Fear & Greed) ============
-        async function fetchFearGreed() {
-            try {
-                const res = await fetch('https://api.alternative.me/fng/?limit=1');
-                const data = await res.json();
-                if (data.data && data.data[0]) {
-                    const val = parseInt(data.data[0].value);
-                    const classification = data.data[0].value_classification;
-                    
-                    let label = "محايد";
-                    if (val <= 25) label = "خوف شديد";
-                    else if (val <= 45) label = "خوف";
-                    else if (val >= 75) label = "طمع شديد";
-                    else if (val >= 55) label = "طمع";
-
-                    document.getElementById('fg-value').innerText = val;
-                    document.getElementById('fg-label').innerText = label;
-                    
-                    const indicator = document.getElementById('fg-indicator');
-                    indicator.style.left = `${val}%`;
-                }
-            } catch(e) {
-                document.getElementById('fg-label').innerText = "تعذر الجلب";
-            }
-        }
-
         // ============ UI Navigation ============
         function switchAnalysisTab(tab) {
             currentAnalysisTab = tab;
@@ -953,7 +1069,7 @@
                     renderCoinSelector();
                     saveState();
                     fetchKlines();
-                    connectWhaleWS(); // تحديث تدفق الحيتان للعملة الجديدة
+                    connectWhaleWS();
                 };
                 btn.className = `flex items-center space-x-1.5 space-x-reverse px-2.5 py-2 rounded-xl font-bold text-xs transition flex-shrink-0 ${
                     isActive ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700'
@@ -1192,7 +1308,12 @@
             } else alert("أدخل مبلغاً صالحاً!");
         }
 
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBalanceModal(); });
+        document.addEventListener('keydown', e => { 
+            if (e.key === 'Escape') {
+                closeBalanceModal();
+                closeAIModal();
+            }
+        });
 
         // ============ Init ============
         loadState();
@@ -1206,17 +1327,14 @@
             btn.className = t === currentTimeframe ? "px-2 py-1 rounded-lg font-bold transition bg-amber-500 text-black" : "px-2 py-1 rounded-lg font-bold transition text-gray-400";
         });
 
-        // تشغيل الاتصالات
         connectPriceWS();
         connectWhaleWS();
         fetchFearGreed();
         
-        // تحديث دوري
         setInterval(() => {
             if (isAnalysisOpen) fetchKlines();
         }, KLINES_INTERVAL_MS);
         
-        // تحديث مؤشر الخوف كل 5 دقائق
         setInterval(fetchFearGreed, 300000);
 
         window.addEventListener('beforeunload', saveState);
