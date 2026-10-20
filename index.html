@@ -118,7 +118,7 @@
                         <span>استخراج التحليل الشامل (AI Decision)</span>
                     </button>
 
-                    <!-- Sub-Tabs (NOW WITH DERIVATIVES & LIQUIDITY) -->
+                    <!-- Sub-Tabs -->
                     <div class="flex bg-gray-900 p-1 rounded-xl border border-gray-800 text-[10px] mb-2 overflow-x-auto">
                         <button onclick="switchAnalysisTab('summary')" id="tab-summary" class="tab-btn active flex-1 py-2 px-2 rounded-lg font-bold transition text-center whitespace-nowrap">الملخص</button>
                         <button onclick="switchAnalysisTab('advanced')" id="tab-advanced" class="tab-btn flex-1 py-2 px-2 rounded-lg font-bold transition text-gray-400 text-center whitespace-nowrap">متقدمة</button>
@@ -197,7 +197,7 @@
                         </div>
                     </div>
 
-                    <!-- 2. Advanced Tab (Stoch RSI, Fibonacci, VWAP, ICT) -->
+                    <!-- 2. Advanced Tab -->
                     <div id="content-advanced" class="space-y-3 hidden">
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
@@ -251,7 +251,7 @@
                         </div>
                     </div>
 
-                    <!-- 3. Derivatives Tab (NEW) -->
+                    <!-- 3. Derivatives Tab -->
                     <div id="content-derivatives" class="space-y-3 hidden">
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
@@ -261,7 +261,7 @@
                                 <span id="deriv-funding" class="text-2xl font-black text-white font-mono">-</span>
                                 <span id="deriv-funding-label" class="text-xs text-gray-400 block">جاري الجلب...</span>
                             </div>
-                            <p class="text-[10px] text-gray-500 text-center">موجب = المتداولون يدفعون للشراء (Longs). سالب = المتداولون يدفعون للبيع (Shorts).</p>
+                            <p class="text-[10px] text-gray-500 text-center">موجب = المتداولون يدفعون للشراء. سالب = المتداولون يدفعون للبيع.</p>
                         </div>
 
                         <div class="glass-card rounded-2xl p-4 space-y-3">
@@ -272,15 +272,11 @@
                                 <span class="text-gray-400">القيمة الحالية:</span>
                                 <span id="deriv-oi" class="font-bold text-white font-mono">-</span>
                             </div>
-                            <div class="flex justify-between items-center text-[11px]">
-                                <span class="text-gray-400">التغير (24س):</span>
-                                <span id="deriv-oi-change" class="font-bold">-</span>
-                            </div>
                         </div>
 
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="scale" class="w-4 h-4 text-purple-400"></i> نسبة الشراء/البيع (Long/Short)
+                                <i data-lucide="scale" class="w-4 h-4 text-purple-400"></i> نسبة الشراء/البيع
                             </h4>
                             <div class="flex justify-between text-[10px] text-gray-400 mb-1">
                                 <span id="deriv-long-text">Long: -</span>
@@ -290,15 +286,14 @@
                                 <div id="deriv-long-bar" class="power-bar-buy w-1/2"></div>
                                 <div id="deriv-short-bar" class="power-bar-sell w-1/2"></div>
                             </div>
-                            <p class="text-[10px] text-gray-500 text-center">نسبة الحسابات التي تتداول شراءً مقابل بيعاً في العقود الآجلة.</p>
                         </div>
                     </div>
 
-                    <!-- 4. Liquidity Tab (NEW) -->
+                    <!-- 4. Liquidity Tab -->
                     <div id="content-liquidity" class="space-y-3 hidden">
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="droplets" class="w-4 h-4 text-blue-400"></i> جيوب السيولة (Liquidity Pockets)
+                                <i data-lucide="droplets" class="w-4 h-4 text-blue-400"></i> جيوب السيولة
                             </h4>
                             <div class="space-y-2 text-[11px]">
                                 <div class="flex justify-between items-center bg-gray-900/60 p-2 rounded-lg">
@@ -310,12 +305,11 @@
                                     <span id="liq-bottom" class="font-bold text-emerald-400 font-mono">-</span>
                                 </div>
                             </div>
-                            <p class="text-[10px] text-gray-500 text-center">هذه المستويات مبنية على أعلى وأدنى سعر في آخر 100 شمعة، حيث تتركز أوامر وقف الخسارة.</p>
                         </div>
 
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
-                                <i data-lucide="skull" class="w-4 h-4 text-red-400"></i> مراقب التصفيات (Liquidations)
+                                <i data-lucide="skull" class="w-4 h-4 text-red-400"></i> مراقب التصفيات
                             </h4>
                             <div id="liquidation-alerts" class="space-y-2 max-h-40 overflow-y-auto">
                                 <div class="text-center text-[10px] text-gray-500 py-4">في انتظار تصفيات كبيرة (+$50K)...</div>
@@ -355,7 +349,7 @@
                 </div>
             </div>
 
-            <!-- TRADING VIEW (unchanged) -->
+            <!-- TRADING VIEW -->
             <div id="view-trading" class="space-y-4 hidden">
                 <div class="glass-card rounded-2xl p-4 relative">
                     <div class="flex justify-between items-center mb-3">
@@ -445,7 +439,7 @@
 
     </div>
 
-    <!-- AI Decision Modal -->
+    <!-- AI Modal -->
     <div id="ai-modal" onclick="if(event.target===this) closeAIModal()" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-sm rounded-3xl p-6 space-y-5 text-center relative overflow-hidden" id="ai-modal-content">
             <div id="ai-glow" class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30 pointer-events-none"></div>
@@ -497,7 +491,7 @@
     <script>
         lucide.createIcons();
 
-        const STORAGE_KEY = 'cryptoscope_pro_state_v6';
+        const STORAGE_KEY = 'cryptoscope_pro_state_v7';
         const KLINES_INTERVAL_MS = 10000;
         const KLINES_PROXY = 'https://corsproxy.io/?';
 
@@ -642,7 +636,7 @@
             }
         }
 
-        // ============ WebSocket: Whale Stream ============
+        // ============ WebSocket: Whale & Liquidation Streams ============
         function connectWhaleWS() {
             if (whaleWS && whaleWS.readyState === WebSocket.OPEN) {
                 if (whaleWS.coinKey === currentCoinKey) return;
@@ -695,14 +689,12 @@
             if (container.children.length > 10) container.lastChild.remove();
         }
 
-        // ============ WebSocket: Liquidation Stream (NEW) ============
         function connectLiquidationWS() {
             if (liquidationWS && liquidationWS.readyState === WebSocket.OPEN) {
                 if (liquidationWS.coinKey === currentCoinKey) return;
                 liquidationWS.close();
             }
             try {
-                // Binance Futures forceOrder stream
                 liquidationWS = new WebSocket(`wss://fstream.binance.com/ws/${currentCoinKey.toLowerCase()}@forceOrder`);
                 liquidationWS.coinKey = currentCoinKey;
             } catch(e) { return; }
@@ -715,7 +707,7 @@
                     const price = parseFloat(order.ap);
                     const qty = parseFloat(order.z);
                     const value = price * qty;
-                    if (value >= 50000) { // تصفيات فوق 50 ألف
+                    if (value >= 50000) {
                         addLiquidationAlert(price, qty, value, order.S);
                     }
                 } catch(e) {}
@@ -734,7 +726,6 @@
             const emptyMsg = container.querySelector('.text-center');
             if (emptyMsg) emptyMsg.remove();
 
-            // side: SELL = long liquidated (bearish), BUY = short liquidated (bullish)
             const isLongLiq = side === 'SELL';
             const el = document.createElement('div');
             el.className = `p-2 rounded-lg border ${isLongLiq ? 'bg-red-500/10 border-red-500/20' : 'bg-emerald-500/10 border-emerald-500/20'} flex justify-between items-center text-[10px] font-mono`;
@@ -813,7 +804,6 @@
                 document.getElementById('ob-buy-bar').style.width = `${buyPct}%`;
                 document.getElementById('ob-sell-bar').style.width = `${100 - buyPct}%`;
 
-                // Liquidity pockets (last 100 candles high/low)
                 if (lastKlines) {
                     const high100 = Math.max(...lastKlines.highs.slice(-100));
                     const low100 = Math.min(...lastKlines.lows.slice(-100));
@@ -825,7 +815,7 @@
 
         async function fetchDerivativesData() {
             try {
-                // 1. Funding Rate & Open Interest (Binance Futures API)
+                // 1. Funding Rate
                 const fapiUrl = `https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${currentCoinKey}`;
                 let res;
                 try {
@@ -856,7 +846,7 @@
                     }
                 } catch(e) {}
 
-                // 3. Long/Short Ratio (Global Accounts)
+                // 3. Long/Short Ratio
                 const lsUrl = `https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${currentCoinKey}&period=1h&limit=1`;
                 try {
                     res = await fetch(lsUrl);
@@ -990,44 +980,30 @@
             return cumV > 0 ? cumPV / cumV : null;
         }
 
-        // ICT Patterns Detection
         function detectICT(opens, highs, lows, closes) {
             if (closes.length < 5) return { ob: '—', fvg: '—', sweep: '—' };
-            
-            // Order Block: last opposite candle before a strong move
             const lastCandle = closes.length - 1;
             const prevCandle = lastCandle - 1;
             let ob = '—';
-            if (closes[lastCandle] > opens[lastCandle] && closes[prevCandle] < opens[prevCandle]) {
-                ob = 'Bullish OB (دعم)';
-            } else if (closes[lastCandle] < opens[lastCandle] && closes[prevCandle] > opens[prevCandle]) {
-                ob = 'Bearish OB (مقاومة)';
-            }
+            if (closes[lastCandle] > opens[lastCandle] && closes[prevCandle] < opens[prevCandle]) ob = 'Bullish OB';
+            else if (closes[lastCandle] < opens[lastCandle] && closes[prevCandle] > opens[prevCandle]) ob = 'Bearish OB';
 
-            // Fair Value Gap: 3-candle pattern
             let fvg = '—';
-            if (highs[lastCandle-2] < lows[lastCandle]) {
-                fvg = 'Bullish FVG';
-            } else if (lows[lastCandle-2] > highs[lastCandle]) {
-                fvg = 'Bearish FVG';
-            }
+            if (highs[lastCandle-2] < lows[lastCandle]) fvg = 'Bullish FVG';
+            else if (lows[lastCandle-2] > highs[lastCandle]) fvg = 'Bearish FVG';
 
-            // Liquidity Sweep: recent high/low broken then reversed
             let sweep = '—';
             const recentHighs = highs.slice(-10);
             const recentLows = lows.slice(-10);
             const maxHigh = Math.max(...recentHighs.slice(0, -1));
             const minLow = Math.min(...recentLows.slice(0, -1));
-            if (highs[lastCandle] > maxHigh && closes[lastCandle] < maxHigh) {
-                sweep = 'Sweep أعلى (اصطياد)';
-            } else if (lows[lastCandle] < minLow && closes[lastCandle] > minLow) {
-                sweep = 'Sweep أسفل (اصطياد)';
-            }
+            if (highs[lastCandle] > maxHigh && closes[lastCandle] < maxHigh) sweep = 'Sweep أعلى';
+            else if (lows[lastCandle] < minLow && closes[lastCandle] > minLow) sweep = 'Sweep أسفل';
 
             return { ob, fvg, sweep };
         }
 
-        // ============ AI Aggregation (Updated with Derivatives) ============
+        // ============ AI Aggregation ============
         function runFullAggregation() {
             if (!lastKlines) {
                 alert("البيانات لم تكتمل بعد، يرجى المحاولة بعد ثوانٍ.");
@@ -1039,7 +1015,6 @@
             let score = 0;
             let reasons = [];
             
-            // 1. RSI
             const rsi = computeRSI(closes);
             if (rsi !== null) {
                 if (rsi < 30) { score += 2; reasons.push({ text: "RSI في منطقة تشبع بيع (فرصة شراء)", type: "bull" }); }
@@ -1048,14 +1023,12 @@
                 else { score -= 0.5; reasons.push({ text: "RSI يميل للهبوط", type: "bear" }); }
             }
 
-            // 2. MACD
             const macd = computeMACD(closes);
             if (macd && macd.histogram !== null) {
                 if (macd.histogram > 0) { score += 1.5; reasons.push({ text: "MACD يعطي تقاطعاً صاعداً", type: "bull" }); }
                 else { score -= 1.5; reasons.push({ text: "MACD يعطي تقاطعاً هابطاً", type: "bear" }); }
             }
 
-            // 3. EMA
             const ema20 = computeEMA(closes, 20);
             const ema50 = computeEMA(closes, 50);
             if (ema20 !== null && ema50 !== null) {
@@ -1063,57 +1036,48 @@
                 else { score -= 1; reasons.push({ text: "المتوسطات الأسية سلبية (EMA20 < EMA50)", type: "bear" }); }
             }
 
-            // 4. Stoch RSI
             const stoch = computeStochRSI(closes);
             if (stoch) {
                 if (stoch.k < 20) { score += 1; reasons.push({ text: "Stoch RSI في تشبع بيع", type: "bull" }); }
                 else if (stoch.k > 80) { score -= 1; reasons.push({ text: "Stoch RSI في تشبع شراء", type: "bear" }); }
             }
 
-            // 5. VWAP
             const vwap = computeVWAP(highs, lows, closes, volumes);
             if (vwap) {
                 if (price > vwap) { score += 1; reasons.push({ text: "السعر يتداول فوق VWAP", type: "bull" }); }
                 else { score -= 1; reasons.push({ text: "السعر يتداول تحت VWAP", type: "bear" }); }
             }
 
-            // 6. Order Book (السيولة)
             const buyBar = document.getElementById('ob-buy-bar');
             const buyPct = parseFloat(buyBar.style.width) || 50;
             if (buyPct > 60) { score += 1; reasons.push({ text: "سيولة الشراء أقوى في دفتر الأوامر", type: "bull" }); }
             else if (buyPct < 40) { score -= 1; reasons.push({ text: "سيولة البيع أقوى في دفتر الأوامر", type: "bear" }); }
 
-            // 7. Fear & Greed
             if (fearGreedValue <= 25) { score += 1; reasons.push({ text: "السوق في حالة خوف شديد (فرصة عكسية)", type: "bull" }); }
             else if (fearGreedValue >= 75) { score -= 1; reasons.push({ text: "السوق في حالة طمع شديد (احتمال تصحيح)", type: "bear" }); }
 
-            // 8. Funding Rate (NEW)
             if (derivativesData.funding !== null) {
                 if (derivativesData.funding < -0.01) { score += 1.5; reasons.push({ text: "معدل التمويل سالب (فرصة شراء عكسية)", type: "bull" }); }
                 else if (derivativesData.funding > 0.03) { score -= 1.5; reasons.push({ text: "معدل التمويل مرتفع جداً (خطر تصحيح)", type: "bear" }); }
             }
 
-            // 9. Long/Short Ratio (NEW)
             if (derivativesData.longShort) {
                 if (derivativesData.longShort.long > 65) { score -= 1; reasons.push({ text: "نسبة الشراء مرتفعة جداً (احتمال تصحيح)", type: "bear" }); }
                 else if (derivativesData.longShort.long < 35) { score += 1; reasons.push({ text: "نسبة الشراء منخفضة جداً (فرصة شراء)", type: "bull" }); }
             }
 
-            // 10. ICT Patterns (NEW)
             const ict = detectICT(opens, highs, lows, closes);
             if (ict.ob.includes('Bullish')) { score += 0.5; reasons.push({ text: "Order Block صاعد (دعم)", type: "bull" }); }
             else if (ict.ob.includes('Bearish')) { score -= 0.5; reasons.push({ text: "Order Block هابط (مقاومة)", type: "bear" }); }
             if (ict.sweep.includes('أسفل')) { score += 0.5; reasons.push({ text: "Liquidity Sweep أسفل (اصطياد بيع)", type: "bull" }); }
             else if (ict.sweep.includes('أعلى')) { score -= 0.5; reasons.push({ text: "Liquidity Sweep أعلى (اصطياد شراء)", type: "bear" }); }
 
-            // النتيجة النهائية
             const isBullish = score >= 0;
             const maxPossibleScore = 11;
             const confidence = Math.min(95, Math.round(Math.abs(score) / maxPossibleScore * 100));
             
             aiDecisionResult = { isBullish, confidence, price, score };
 
-            // عرض النافذة المنبثقة
             const modal = document.getElementById('ai-modal');
             const verdict = document.getElementById('ai-verdict');
             const verdictSub = document.getElementById('ai-verdict-sub');
@@ -1220,7 +1184,6 @@
             const atr = atrSlice.reduce((a,b) => a+b, 0) / 14;
             document.getElementById('ind-atr').innerText = (atr / price * 100).toFixed(2) + "%";
 
-            // Stoch RSI
             const stoch = computeStochRSI(closes);
             if (stoch) {
                 document.getElementById('ind-stoch-k').innerText = stoch.k.toFixed(1);
@@ -1231,7 +1194,6 @@
                 stateEl.className = `font-bold ${stoch.k > 80 ? 'text-red-400' : stoch.k < 20 ? 'text-emerald-400' : 'text-gray-400'}`;
             }
 
-            // VWAP
             const vwap = computeVWAP(highs, lows, closes, volumes);
             if (vwap) {
                 document.getElementById('ind-vwap').innerText = '$' + vwap.toLocaleString(undefined, {maximumFractionDigits: 2});
@@ -1241,7 +1203,6 @@
                 vwapEl.className = `font-bold ${price > vwap ? 'text-emerald-400' : 'text-red-400'}`;
             }
 
-            // ICT
             const ict = detectICT(opens, highs, lows, closes);
             document.getElementById('ind-ict-ob').innerText = ict.ob;
             document.getElementById('ind-ict-ob').className = `font-bold ${ict.ob.includes('Bullish') ? 'text-emerald-400' : ict.ob.includes('Bearish') ? 'text-red-400' : 'text-gray-400'}`;
@@ -1289,9 +1250,11 @@
         }
 
         // ============ UI ============
+        // ✅ تم إصلاح هذه الدالة لتشمل جميع التبويبات الخمسة
         function switchAnalysisTab(tab) {
             currentAnalysisTab = tab;
-            ['summary', 'advanced', 'derivatives', 'liquidity', 'sentiment'].forEach(t => {
+            const tabs = ['summary', 'advanced', 'derivatives', 'liquidity', 'sentiment'];
+            tabs.forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
                 const content = document.getElementById(`content-${t}`);
                 if (!btn || !content) return;
