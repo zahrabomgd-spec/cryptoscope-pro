@@ -190,7 +190,6 @@
                     </div>
 
                     <div id="content-advanced" class="space-y-3 hidden">
-                        <!-- ✅ تم إضافة الدعم والمقاومة هنا -->
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
                                 <i data-lucide="align-vertical-space-around" class="w-4 h-4 text-rose-400"></i> الدعم والمقاومة (Pivot Points)
@@ -439,7 +438,8 @@
 
         </div>
 
-        <div class="absolute bottom-0 left-0 right-0 bg-[#121620]/95 backdrop-blur-md border-t border-gray-800 px-6 py-2.5 flex justify-around items-center z-20">
+        <!-- Bottom Navigation Bar - ✅ تم إضافة زر السياسات -->
+        <div class="absolute bottom-0 left-0 right-0 bg-[#121620]/95 backdrop-blur-md border-t border-gray-800 px-4 py-2.5 flex justify-around items-center z-20">
             <button onclick="switchTab('analytics')" id="nav-analytics" class="flex flex-col items-center text-amber-400 space-y-1 transition">
                 <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
                 <span class="text-[10px] font-bold">التحليلات</span>
@@ -448,6 +448,10 @@
                 <i data-lucide="zap" class="w-5 h-5"></i>
                 <span class="text-[10px] font-bold">التداول</span>
             </button>
+            <a href="legal.html" class="flex flex-col items-center text-gray-400 hover:text-amber-400 space-y-1 transition">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">السياسات</span>
+            </a>
         </div>
 
     </div>
@@ -506,7 +510,7 @@
     <script>
         lucide.createIcons();
 
-        const STORAGE_KEY = 'cryptoscope_pro_state_v9';
+        const STORAGE_KEY = 'cryptoscope_pro_state_v10';
         const KLINES_INTERVAL_MS = 10000;
         const KLINES_PROXIES = [
             'https://api.allorigins.win/raw?url=',
@@ -944,20 +948,16 @@
             return cumV > 0 ? cumPV / cumV : null;
         }
 
-        // ✅ دالة حساب مستويات الدعم والمقاومة (Pivot Points)
         function computePivotPoints(highs, lows, closes) {
             if (highs.length < 3) return null;
-            // نستخدم الشمعة السابقة المكتملة لحساب نقاط البيفوت
             const prevH = highs[highs.length - 2];
             const prevL = lows[lows.length - 2];
             const prevC = closes[closes.length - 2];
-            
             const pivot = (prevH + prevL + prevC) / 3;
             const r1 = 2 * pivot - prevL;
             const s1 = 2 * pivot - prevH;
             const r2 = pivot + (prevH - prevL);
             const s2 = pivot - (prevH - prevL);
-            
             return { pivot, r1, r2, s1, s2 };
         }
 
@@ -1078,10 +1078,9 @@
             if (ict.sweep.includes('أسفل')) { score += 0.5; reasons.push({ text: "Liquidity Sweep أسفل", type: "bull" }); }
             else if (ict.sweep.includes('أعلى')) { score -= 0.5; reasons.push({ text: "Liquidity Sweep أعلى", type: "bear" }); }
 
-            // ✅ إضافة الدعم والمقاومة إلى محرك التحليل
             const pivotData = computePivotPoints(highs, lows, closes);
             if (pivotData) {
-                const threshold = price * 0.005; // 0.5% قرب
+                const threshold = price * 0.005;
                 if (Math.abs(price - pivotData.s1) < threshold) {
                     score += 1.5; reasons.push({ text: "السعر قريب من دعم S1", type: "bull" });
                 } else if (Math.abs(price - pivotData.s2) < threshold) {
@@ -1133,7 +1132,7 @@
             const tradeBtn = document.getElementById('ai-trade-btn');
             const retryBtn = document.getElementById('ai-retry-btn');
 
-            const maxScore = 14; // زيادة بسبب إضافة الدعم والمقاومة
+            const maxScore = 14;
             const confidence = Math.min(95, Math.max(5, Math.round(Math.abs(score) / maxScore * 100)));
             aiDecisionResult = { isBullish, confidence, price, score };
             modal.classList.remove('hidden');
@@ -1253,7 +1252,6 @@
                 vwapEl.className = `font-bold ${price > vwap ? 'text-emerald-400' : 'text-red-400'}`;
             }
 
-            // ✅ حساب وعرض الدعم والمقاومة
             const pivotData = computePivotPoints(highs, lows, closes);
             if (pivotData) {
                 document.getElementById('sr-r2').innerText = '$' + pivotData.r2.toLocaleString(undefined, {maximumFractionDigits: 2});
