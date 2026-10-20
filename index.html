@@ -14,7 +14,10 @@
         .glow-red { box-shadow: 0 0 20px rgba(255, 61, 0, 0.2); }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
-        .indicator-loading { opacity: 0.5; }
+        .price-flash-up { animation: flashUp 0.5s ease; }
+        .price-flash-down { animation: flashDown 0.5s ease; }
+        @keyframes flashUp { 0% { color: #10b981; } 100% { color: #ffffff; } }
+        @keyframes flashDown { 0% { color: #ef4444; } 100% { color: #ffffff; } }
     </style>
 </head>
 <body class="min-h-screen flex justify-center items-center p-0 md:p-6">
@@ -29,7 +32,7 @@
                     <h1 class="font-black text-sm text-white">CryptoScope <span class="text-amber-400">Pro</span></h1>
                     <p class="text-[9px] text-emerald-400 flex items-center gap-1" id="connection-status">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>مباشر من Binance</span>
+                        <span>جاري الاتصال...</span>
                     </p>
                 </div>
             </div>
@@ -48,7 +51,7 @@
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
                         <label class="text-xs font-semibold text-gray-400">اختر من بين 20 عملة:</label>
-                        <span id="last-update-time" class="text-[10px] text-amber-400 font-mono">جاري التحميل...</span>
+                        <span id="last-update-time" class="text-[10px] text-amber-400 font-mono">جاري الاتصال...</span>
                     </div>
                     <div id="coin-selector" class="flex space-x-2 space-x-reverse overflow-x-auto pb-1.5"></div>
                 </div>
@@ -97,14 +100,13 @@
                 <!-- FULL ANALYSIS -->
                 <div id="full-analysis-container" class="space-y-3.5 hidden">
                     
-                    <!-- Signal Card -->
                     <div class="glass-card rounded-2xl p-4 border-l-4 border-emerald-500 glow-green" id="signal-card">
                         <div class="flex justify-between items-center mb-3">
                             <h3 class="font-bold text-white flex items-center space-x-2 space-x-reverse text-xs">
                                 <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
                                 <span>توصية مبنية على مؤشرات حقيقية</span>
                             </h3>
-                            <span id="signal-badge" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg border border-emerald-500/30">جاري التحليل...</span>
+                            <span id="signal-badge" class="px-2 py-0.5 bg-gray-800 text-amber-400 text-[11px] font-bold rounded-lg border border-amber-500">جاري التحليل...</span>
                         </div>
                         <div class="space-y-2.5 font-mono text-xs">
                             <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 flex justify-between items-center">
@@ -141,7 +143,6 @@
                         </div>
                     </div>
 
-                    <!-- Indicators Grid -->
                     <div class="grid grid-cols-2 gap-3">
                         <div class="glass-card rounded-2xl p-3 space-y-2">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-1.5">
@@ -168,7 +169,6 @@
                         </div>
                     </div>
 
-                    <!-- Pattern & Volatility -->
                     <div class="glass-card rounded-2xl p-3 space-y-2">
                         <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-1.5">
                             <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-purple-400"></i> تحليل السوق
@@ -297,9 +297,10 @@
     <script>
         lucide.createIcons();
 
-        const STORAGE_KEY = 'cryptoscope_pro_state_v2';
-        const PRICE_INTERVAL_MS = 1000;
-        const KLINES_INTERVAL_MS = 5000;
+        const STORAGE_KEY = 'cryptoscope_pro_state_v3';
+        const KLINES_INTERVAL_MS = 10000; // كل 10 ثوانٍ
+        const WS_BASE = 'wss://stream.binance.com:9443/ws';
+        const KLINES_PROXY = 'https://corsproxy.io/?';
 
         const coinsMap = {
             BTCUSDT: { name: "Bitcoin", symbol: "BTCUSDT", icon: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png", price: 0, change24: 0, high: 0, low: 0, vol: 0 },
@@ -330,9 +331,10 @@
         let openPositions = [];
         let closedTrades = [];
         let isAnalysisOpen = false;
-        let fetchController = null;
-        let klinesController = null;
-        let lastKlines = null; // { closes, highs, lows, opens, volumes, buyVols, sellVols }
+        let lastKlines = null;
+        let ws = null;
+        let wsReconnectTimer = null;
+        let previousPrice = 0;
 
         // ============ Helpers ============
         function generateId() {
@@ -367,44 +369,126 @@
             return { '5m': '5m', '1h': '1h', '24h': '1d', '7d': '1w' }[tf] || '1d';
         }
 
-        // ============ Fetch Prices ============
-        async function fetchBinancePrices() {
-            if (fetchController) { try { fetchController.abort(); } catch(e) {} }
-            fetchController = new AbortController();
+        // ============ WebSocket: Stream All 20 Coins ============
+        // نبني مسار التدفق لجميع العملات دفعة واحدة:
+        // wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker/...
+        function buildStreamUrl() {
+            const streams = Object.keys(coinsMap).map(sym => `${sym.toLowerCase()}@ticker`).join('/');
+            return `wss://stream.binance.com:9443/stream?streams=${streams}`;
+        }
+
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
             try {
-                const symbols = JSON.stringify(Object.keys(coinsMap));
-                const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(symbols)}`, { signal: fetchController.signal });
-                if (!res.ok) throw new Error("HTTP " + res.status);
-                const data = await res.json();
-                if (Array.isArray(data)) {
-                    data.forEach(item => {
-                        if (coinsMap[item.symbol]) {
-                            coinsMap[item.symbol].price = parseFloat(item.lastPrice);
-                            coinsMap[item.symbol].change24 = parseFloat(item.priceChangePercent);
-                            coinsMap[item.symbol].high = parseFloat(item.highPrice);
-                            coinsMap[item.symbol].low = parseFloat(item.lowPrice);
-                            coinsMap[item.symbol].vol = parseFloat(item.quoteVolume);
-                        }
-                    });
-                }
-                setConnectionStatus(true);
-                updateUI();
-                updateOpenPositionsPnL();
-            } catch(err) {
-                if (err.name !== 'AbortError') setConnectionStatus(false);
+                ws = new WebSocket(buildStreamUrl());
+            } catch(e) {
+                setConnectionStatus(false, "فشل الاتصال");
+                scheduleReconnect();
+                return;
             }
+
+            ws.onopen = () => {
+                setConnectionStatus(true, "مباشر (WebSocket)");
+                document.getElementById('last-update-time').innerText = "محدث لحظياً";
+                // بعد الاتصال، جلب الشموع للتحليل
+                fetchKlines();
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    const t = msg.data;
+                    if (!t || !t.s) return;
+                    const coin = coinsMap[t.s];
+                    if (!coin) return;
+
+                    // تحديث بيانات العملة
+                    coin.price = parseFloat(t.c);
+                    coin.change24 = parseFloat(t.P);
+                    coin.high = parseFloat(t.h);
+                    coin.low = parseFloat(t.l);
+                    coin.vol = parseFloat(t.q);
+
+                    // إذا كانت هذه العملة هي النشطة، حدّث الواجهة فوراً
+                    if (t.s === currentCoinKey) {
+                        updateActivePriceDisplay(coin.price, coin.change24);
+                    }
+
+                    // تحديث PnL للصفقات المفتوحة على هذه العملة
+                    updateOpenPositionsPnL();
+                } catch(e) {}
+            };
+
+            ws.onerror = () => {
+                setConnectionStatus(false, "خطأ في الاتصال");
+            };
+
+            ws.onclose = () => {
+                setConnectionStatus(false, "انقطع الاتصال");
+                scheduleReconnect();
+            };
+        }
+
+        function scheduleReconnect() {
+            if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
+            wsReconnectTimer = setTimeout(() => {
+                connectWebSocket();
+            }, 3000);
+        }
+
+        function setConnectionStatus(online, message) {
+            const el = document.getElementById('connection-status');
+            if (online) {
+                el.className = "text-[9px] text-emerald-400 flex items-center gap-1";
+                el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>${message || 'مباشر'}</span>`;
+            } else {
+                el.className = "text-[9px] text-red-400 flex items-center gap-1";
+                el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span><span>${message || 'غير متصل'}</span>`;
+                document.getElementById('last-update-time').innerText = "إعادة محاولة...";
+            }
+        }
+
+        // ============ تحديث سعر العملة النشطة (مع وميض) ============
+        function updateActivePriceDisplay(price, change) {
+            const priceEl = document.getElementById('active-coin-price');
+            const newText = "$" + price.toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (priceEl.innerText !== newText) {
+                priceEl.innerText = newText;
+                if (previousPrice !== 0) {
+                    priceEl.classList.remove('price-flash-up', 'price-flash-down');
+                    void priceEl.offsetWidth; // trigger reflow
+                    priceEl.classList.add(price > previousPrice ? 'price-flash-up' : 'price-flash-down');
+                }
+                previousPrice = price;
+            }
+
+            const isPos = change >= 0;
+            document.getElementById('active-coin-change').className = `text-xs font-semibold flex items-center justify-end space-x-1 space-x-reverse ${isPos ? 'text-emerald-400' : 'text-red-400'}`;
+            document.getElementById('active-coin-change-text').innerText = (isPos ? "+" : "") + change.toFixed(2) + "%";
+
+            const coin = coinsMap[currentCoinKey];
+            document.getElementById('stat-high').innerText = "$" + coin.high.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('stat-low').innerText = "$" + coin.low.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('stat-volume').innerText = "$" + (coin.vol / 1e6).toFixed(1) + "M";
+            document.getElementById('trade-live-price').innerText = newText;
         }
 
         // ============ Fetch Klines (Candles) ============
         async function fetchKlines() {
-            if (klinesController) { try { klinesController.abort(); } catch(e) {} }
-            klinesController = new AbortController();
             try {
                 const interval = tfToBinance(currentTimeframe);
                 const url = `https://api.binance.com/api/v3/klines?symbol=${currentCoinKey}&interval=${interval}&limit=100`;
-                const res = await fetch(url, { signal: klinesController.signal });
-                if (!res.ok) throw new Error("HTTP " + res.status);
+                // محاولة مباشرة أولاً، وإن فشلت نستخدم وسيطاً
+                let res;
+                try {
+                    res = await fetch(url);
+                    if (!res.ok) throw new Error("direct failed");
+                } catch(e) {
+                    res = await fetch(KLINES_PROXY + encodeURIComponent(url));
+                }
+                if (!res.ok) throw new Error("proxy failed");
                 const raw = await res.json();
+                if (!Array.isArray(raw)) throw new Error("bad data");
 
                 const closes = [], highs = [], lows = [], opens = [], volumes = [], buyVols = [], sellVols = [];
                 raw.forEach(k => {
@@ -422,7 +506,7 @@
                 lastKlines = { opens, highs, lows, closes, volumes, buyVols, sellVols };
                 computeAndRenderAnalysis();
             } catch(err) {
-                if (err.name !== 'AbortError') console.log("Klines error:", err);
+                console.log("Klines error:", err);
             }
         }
 
@@ -437,14 +521,11 @@
             avgGain /= period; avgLoss /= period;
             for (let i = period + 1; i < closes.length; i++) {
                 const diff = closes[i] - closes[i-1];
-                const gain = diff > 0 ? diff : 0;
-                const loss = diff < 0 ? -diff : 0;
-                avgGain = (avgGain * (period - 1) + gain) / period;
-                avgLoss = (avgLoss * (period - 1) + loss) / period;
+                avgGain = (avgGain * (period - 1) + (diff > 0 ? diff : 0)) / period;
+                avgLoss = (avgLoss * (period - 1) + (diff < 0 ? -diff : 0)) / period;
             }
             if (avgLoss === 0) return 100;
-            const rs = avgGain / avgLoss;
-            return 100 - 100 / (1 + rs);
+            return 100 - 100 / (1 + avgGain / avgLoss);
         }
 
         function computeEMA(closes, period) {
@@ -460,7 +541,6 @@
             const ema26 = computeEMA(closes, 26);
             if (ema12 === null || ema26 === null) return null;
             const macdLine = ema12 - ema26;
-            // Signal line: EMA9 of MACD — نحسب تقريبياً
             const macdSeries = [];
             for (let i = 26; i <= closes.length; i++) {
                 const slice = closes.slice(0, i);
@@ -490,7 +570,6 @@
             return trs.slice(-period).reduce((a,b) => a+b, 0) / period;
         }
 
-        // ============ Candlestick Patterns ============
         function detectPattern(opens, highs, lows, closes) {
             if (closes.length < 3) return "—";
             const i = closes.length - 1;
@@ -500,34 +579,21 @@
             const bodyRatio = body / range;
             const upperShadow = highs[i] - Math.max(opens[i], closes[i]);
             const lowerShadow = Math.min(opens[i], closes[i]) - lows[i];
-
-            // Doji
             if (bodyRatio < 0.1) return "Doji (حياد)";
-            // Hammer (bullish)
             if (lowerShadow > body * 2 && upperShadow < body * 0.5 && closes[i] > opens[i]) return "Hammer (شراء)";
-            // Shooting Star (bearish)
             if (upperShadow > body * 2 && lowerShadow < body * 0.5 && closes[i] < opens[i]) return "Shooting Star (بيع)";
-
-            // Engulfing
             const prevBody = Math.abs(closes[i-1] - opens[i-1]);
-            const bullishEngulf = closes[i] > opens[i] && closes[i-1] < opens[i-1] &&
-                                  closes[i] > opens[i-1] && opens[i] < closes[i-1] && body > prevBody;
-            if (bullishEngulf) return "Bullish Engulfing (شراء)";
-
-            const bearishEngulf = closes[i] < opens[i] && closes[i-1] > opens[i-1] &&
-                                  opens[i] > closes[i-1] && closes[i] < opens[i-1] && body > prevBody;
-            if (bearishEngulf) return "Bearish Engulfing (بيع)";
-
+            if (closes[i] > opens[i] && closes[i-1] < opens[i-1] && closes[i] > opens[i-1] && opens[i] < closes[i-1] && body > prevBody) return "Bullish Engulfing (شراء)";
+            if (closes[i] < opens[i] && closes[i-1] > opens[i-1] && opens[i] > closes[i-1] && closes[i] < opens[i-1] && body > prevBody) return "Bearish Engulfing (بيع)";
             return "—";
         }
 
         // ============ Analysis Render ============
         function computeAndRenderAnalysis() {
             if (!lastKlines) return;
-            const { opens, highs, lows, closes, volumes, buyVols, sellVols } = lastKlines;
+            const { opens, highs, lows, closes, buyVols, sellVols } = lastKlines;
             const price = closes[closes.length - 1];
 
-            // RSI
             const rsi = computeRSI(closes);
             const rsiEl = document.getElementById('ind-rsi');
             if (rsi !== null) {
@@ -535,7 +601,6 @@
                 rsiEl.className = `font-bold ${rsi > 70 ? 'text-red-400' : rsi < 30 ? 'text-emerald-400' : 'text-amber-400'}`;
             }
 
-            // MACD
             const macd = computeMACD(closes);
             const macdEl = document.getElementById('ind-macd');
             const crossEl = document.getElementById('ind-macd-cross');
@@ -549,7 +614,6 @@
                 }
             }
 
-            // EMA
             const ema20 = computeEMA(closes, 20);
             const ema50 = computeEMA(closes, 50);
             const emaEl = document.getElementById('ind-ema');
@@ -559,7 +623,6 @@
                 emaEl.className = `font-bold ${bullish ? 'text-emerald-400' : 'text-red-400'}`;
             }
 
-            // Bollinger
             const bb = computeBollinger(closes);
             const bbPosEl = document.getElementById('ind-bb-pos');
             const bbWidthEl = document.getElementById('ind-bb-width');
@@ -570,7 +633,6 @@
                 bbWidthEl.innerText = (bb.width * 100).toFixed(2) + "%";
             }
 
-            // Volume
             const totalBuy = buyVols.slice(-10).reduce((a,b) => a+b, 0);
             const totalSell = sellVols.slice(-10).reduce((a,b) => a+b, 0);
             const total = totalBuy + totalSell;
@@ -579,16 +641,11 @@
             document.getElementById('ind-buy-vol').innerText = (totalBuy / 1e3).toFixed(1) + "K";
             document.getElementById('ind-sell-vol').innerText = (totalSell / 1e3).toFixed(1) + "K";
 
-            // ATR
             const atr = computeATR(highs, lows, closes);
-            if (atr !== null) {
-                document.getElementById('ind-atr').innerText = (atr / price * 100).toFixed(2) + "%";
-            }
+            if (atr !== null) document.getElementById('ind-atr').innerText = (atr / price * 100).toFixed(2) + "%";
 
-            // Pattern
             document.getElementById('ind-pattern').innerText = detectPattern(opens, highs, lows, closes);
 
-            // Signal recommendation
             renderSignal(rsi, macd, ema20, ema50, bb, price, buyPct);
         }
 
@@ -596,7 +653,6 @@
             const badge = document.getElementById('signal-badge');
             const card = document.getElementById('signal-card');
             let score = 0;
-
             if (rsi !== null) {
                 if (rsi < 30) score += 2;
                 else if (rsi > 70) score -= 2;
@@ -622,13 +678,11 @@
             badge.className = `px-2 py-0.5 bg-gray-800 ${color} text-[11px] font-bold rounded-lg border ${border}`;
             card.className = `glass-card rounded-2xl p-4 border-l-4 ${border} ${glow}`;
 
-            // Entry / SL / TP
             const atrPct = Math.max(0.005, Math.min(0.03, Math.abs(score) * 0.005 + 0.005));
             const entry = price;
             const sl = score >= 0 ? price * (1 - atrPct * 2) : price * (1 + atrPct * 2);
             document.getElementById('sig-entry').innerText = "$" + entry.toLocaleString(undefined, {maximumFractionDigits: 2});
             document.getElementById('sig-sl').innerText = "$" + sl.toLocaleString(undefined, {maximumFractionDigits: 2});
-
             const tpMult = score >= 0 ? [1, 2, 3] : [-1, -2, -3];
             document.getElementById('sig-tp1').innerText = "$" + (price * (1 + tpMult[0] * atrPct * 1.5)).toLocaleString(undefined, {maximumFractionDigits: 2});
             document.getElementById('sig-tp2').innerText = "$" + (price * (1 + tpMult[1] * atrPct * 1.5)).toLocaleString(undefined, {maximumFractionDigits: 2});
@@ -636,19 +690,6 @@
         }
 
         // ============ UI ============
-        function setConnectionStatus(online) {
-            const el = document.getElementById('connection-status');
-            if (online) {
-                el.className = "text-[9px] text-emerald-400 flex items-center gap-1";
-                el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>مباشر من Binance</span>';
-                document.getElementById('last-update-time').innerText = "محدث";
-            } else {
-                el.className = "text-[9px] text-red-400 flex items-center gap-1";
-                el.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span><span>انقطع الاتصال</span>';
-                document.getElementById('last-update-time').innerText = "غير متصل";
-            }
-        }
-
         function renderCoinSelector() {
             const container = document.getElementById('coin-selector');
             container.innerHTML = '';
@@ -658,11 +699,12 @@
                 const btn = document.createElement('button');
                 btn.onclick = () => {
                     currentCoinKey = key;
+                    previousPrice = 0;
                     lastKlines = null;
                     updateUI();
                     renderCoinSelector();
                     saveState();
-                    fetchKlines(); // جلب شموع العملة الجديدة فوراً
+                    fetchKlines();
                 };
                 btn.className = `flex items-center space-x-1.5 space-x-reverse px-2.5 py-2 rounded-xl font-bold text-xs transition flex-shrink-0 ${
                     isActive ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700'
@@ -678,15 +720,10 @@
             document.getElementById('active-coin-icon').src = coin.icon;
             document.getElementById('active-coin-name').innerText = coin.name;
             document.getElementById('active-coin-symbol').innerText = coin.symbol + " (" + currentTimeframe.toUpperCase() + ")";
-            document.getElementById('active-coin-price').innerText = "$" + coin.price.toLocaleString(undefined, {minimumFractionDigits: 2});
-            const isPos = coin.change24 >= 0;
-            document.getElementById('active-coin-change').className = `text-xs font-semibold flex items-center justify-end space-x-1 space-x-reverse ${isPos ? 'text-emerald-400' : 'text-red-400'}`;
-            document.getElementById('active-coin-change-text').innerText = (isPos ? "+" : "") + coin.change24.toFixed(2) + "%";
-            document.getElementById('stat-high').innerText = "$" + coin.high.toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('stat-low').innerText = "$" + coin.low.toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('stat-volume').innerText = "$" + (coin.vol / 1e6).toFixed(1) + "M";
+            if (coin.price > 0) {
+                updateActivePriceDisplay(coin.price, coin.change24);
+            }
             document.getElementById('trade-coin-name').innerText = `${coin.name} (${coin.symbol})`;
-            document.getElementById('trade-live-price').innerText = "$" + coin.price.toLocaleString(undefined, {minimumFractionDigits: 2});
             lucide.createIcons();
         }
 
@@ -701,7 +738,7 @@
             lastKlines = null;
             updateUI();
             saveState();
-            fetchKlines(); // جلب شموع الإطار الجديد فوراً
+            fetchKlines();
         }
 
         function toggleFullAnalysis() {
@@ -766,10 +803,7 @@
         function quickTradeFromSignal(type) { executePaperTrade(type); }
 
         function updateOpenPositionsPnL() {
-            if (openPositions.length === 0) {
-                document.getElementById('total-pnl').innerText = "$0.00";
-                return;
-            }
+            if (openPositions.length === 0) return;
             let totalPnL = 0;
             openPositions.forEach(pos => {
                 const coin = coinsMap[pos.coinKey];
@@ -910,10 +944,13 @@
         const tfInit = currentTimeframe === '5m' ? '5 دقائق' : (currentTimeframe === '1h' ? 'ساعة' : (currentTimeframe === '24h' ? 'يومي' : 'أسبوعي'));
         document.getElementById('tf-btn-label').innerText = tfInit;
 
-        fetchBinancePrices();
-        fetchKlines();
-        setInterval(fetchBinancePrices, PRICE_INTERVAL_MS);
-        setInterval(fetchKlines, KLINES_INTERVAL_MS);
+        // بدء الاتصال المباشر
+        connectWebSocket();
+
+        // تحديث الشموع دورياً (10 ثوانٍ)
+        setInterval(() => {
+            if (isAnalysisOpen) fetchKlines();
+        }, KLINES_INTERVAL_MS);
         window.addEventListener('beforeunload', saveState);
     </script>
 </body>
