@@ -26,8 +26,6 @@
         .power-bar-sell { background: #ef4444; height: 100%; transition: width 0.3s ease; }
         .ai-btn { background: linear-gradient(45deg, #8b5cf6, #ec4899, #f59e0b); background-size: 200% 200%; animation: gradientShift 3s ease infinite; }
         @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="min-h-screen flex justify-center items-center p-0 md:p-6">
@@ -191,6 +189,20 @@
                     </div>
 
                     <div id="content-advanced" class="space-y-3 hidden">
+                        <!-- ✅ تم إضافة الدعم والمقاومة هنا -->
+                        <div class="glass-card rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                                <i data-lucide="align-vertical-space-around" class="w-4 h-4 text-rose-400"></i> الدعم والمقاومة (Pivot Points)
+                            </h4>
+                            <div class="space-y-1 text-[11px]">
+                                <div class="flex justify-between"><span class="text-gray-400">مقاومة قوية (R2)</span><span id="sr-r2" class="font-bold text-red-400 font-mono">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">مقاومة (R1)</span><span id="sr-r1" class="font-bold text-red-300 font-mono">-</span></div>
+                                <div class="flex justify-between bg-gray-800/50 p-1 rounded"><span class="text-gray-300">السعر الحالي</span><span id="sr-current" class="font-bold text-white font-mono">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">دعم (S1)</span><span id="sr-s1" class="font-bold text-emerald-300 font-mono">-</span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">دعم قوي (S2)</span><span id="sr-s2" class="font-bold text-emerald-400 font-mono">-</span></div>
+                            </div>
+                        </div>
+
                         <div class="glass-card rounded-2xl p-4 space-y-3">
                             <h4 class="font-bold text-white text-xs flex items-center gap-1.5 border-b border-gray-800 pb-2">
                                 <i data-lucide="line-chart" class="w-4 h-4 text-amber-400"></i> ستوكاستيك RSI
@@ -468,7 +480,7 @@
                     <div id="ai-reasons" class="space-y-1.5 text-[11px]"></div>
                 </div>
 
-                <button onclick="retryAnalysis()" id="ai-retry-btn" class="w-full py-2 mb-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl text-xs transition hidden">🔄 إعادة محاولة تحميل الشموع الكاملة</button>
+                <button onclick="retryAnalysis()" id="ai-retry-btn" class="w-full py-2 mb-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl text-xs transition hidden">🔄 إعادة محاولة تحميل الشموع</button>
 
                 <div class="flex space-x-2 space-x-reverse">
                     <button id="ai-trade-btn" onclick="tradeFromAI()" class="flex-1 py-3 text-black font-black rounded-xl text-sm transition shadow-lg">تنفيذ الصفقة</button>
@@ -493,10 +505,8 @@
     <script>
         lucide.createIcons();
 
-        const STORAGE_KEY = 'cryptoscope_pro_state_v8';
+        const STORAGE_KEY = 'cryptoscope_pro_state_v9';
         const KLINES_INTERVAL_MS = 10000;
-
-        // ✅ 3 وسطاء احتياطيون
         const KLINES_PROXIES = [
             'https://api.allorigins.win/raw?url=',
             'https://api.codetabs.com/v1/proxy?quest=',
@@ -543,7 +553,6 @@
         let fearGreedValue = 50;
         let derivativesData = { funding: null, oi: null, longShort: null };
 
-        // ============ Helpers ============
         function generateId() {
             if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
             return Date.now() + '-' + Math.random().toString(36).slice(2, 10);
@@ -576,7 +585,6 @@
             return { '5m': '5m', '1h': '1h', '24h': '1d', '7d': '1w' }[tf] || '1d';
         }
 
-        // ============ ✅ دوال جلب موثوقة مع 3 وسطاء ============
         async function fetchWithProxies(url, timeoutMs = 8000) {
             let lastError = null;
             for (const proxy of KLINES_PROXIES) {
@@ -585,33 +593,23 @@
                     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
                     const res = await fetch(proxy + encodeURIComponent(url), { signal: controller.signal });
                     clearTimeout(timeoutId);
-                    if (res.ok) {
-                        console.log(`✅ نجح الوسيط: ${proxy.substring(0, 40)}...`);
-                        return res;
-                    }
-                } catch(e) {
-                    lastError = e;
-                    console.log(`❌ فشل الوسيط ${proxy.substring(0, 40)}...: ${e.message}`);
-                }
+                    if (res.ok) return res;
+                } catch(e) { lastError = e; }
             }
             throw lastError || new Error("All proxies failed");
         }
 
         async function fetchWithDirectOrProxy(url, timeoutMs = 5000) {
-            // محاولة مباشرة
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
                 const res = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
                 if (res.ok) return res;
-            } catch(e) {
-                console.log("مباشر فشل، جرب الوسطاء...");
-            }
+            } catch(e) {}
             return await fetchWithProxies(url);
         }
 
-        // ============ WebSocket: Price Stream ============
         function buildStreamUrl() {
             const streams = Object.keys(coinsMap).map(sym => `${sym.toLowerCase()}@ticker`).join('/');
             return `wss://stream.binance.com:9443/stream?streams=${streams}`;
@@ -621,11 +619,7 @@
             if (priceWS && priceWS.readyState === WebSocket.OPEN) return;
             try {
                 priceWS = new WebSocket(buildStreamUrl());
-            } catch(e) {
-                setConnectionStatus(false, "فشل الاتصال");
-                scheduleReconnect();
-                return;
-            }
+            } catch(e) { setConnectionStatus(false, "فشل"); scheduleReconnect(); return; }
 
             priceWS.onopen = () => {
                 setConnectionStatus(true, "مباشر (WebSocket)");
@@ -640,25 +634,18 @@
                     if (!t || !t.s) return;
                     const coin = coinsMap[t.s];
                     if (!coin) return;
-
                     coin.price = parseFloat(t.c);
                     coin.change24 = parseFloat(t.P);
                     coin.high = parseFloat(t.h);
                     coin.low = parseFloat(t.l);
                     coin.vol = parseFloat(t.q);
-
-                    if (t.s === currentCoinKey) {
-                        updateActivePriceDisplay(coin.price, coin.change24);
-                    }
+                    if (t.s === currentCoinKey) updateActivePriceDisplay(coin.price, coin.change24);
                     updateOpenPositionsPnL();
                 } catch(e) {}
             };
 
-            priceWS.onerror = () => setConnectionStatus(false, "خطأ في الاتصال");
-            priceWS.onclose = () => {
-                setConnectionStatus(false, "انقطع الاتصال");
-                scheduleReconnect();
-            };
+            priceWS.onerror = () => setConnectionStatus(false, "خطأ");
+            priceWS.onclose = () => { setConnectionStatus(false, "انقطع"); scheduleReconnect(); };
         }
 
         function scheduleReconnect() {
@@ -678,7 +665,6 @@
             }
         }
 
-        // ============ Whale & Liquidation Streams ============
         function connectWhaleWS() {
             if (whaleWS && whaleWS.readyState === WebSocket.OPEN) {
                 if (whaleWS.coinKey === currentCoinKey) return;
@@ -688,7 +674,6 @@
                 whaleWS = new WebSocket(`wss://stream.binance.com:9443/ws/${currentCoinKey.toLowerCase()}@aggTrade`);
                 whaleWS.coinKey = currentCoinKey;
             } catch(e) { return; }
-
             whaleWS.onmessage = (event) => {
                 try {
                     const trade = JSON.parse(event.data);
@@ -699,12 +684,7 @@
                     if (value >= 100000) addWhaleAlert(price, qty, value, trade.m ? 'SELL' : 'BUY');
                 } catch(e) {}
             };
-
-            whaleWS.onclose = () => {
-                setTimeout(() => {
-                    if (whaleWS.coinKey === currentCoinKey) connectWhaleWS();
-                }, 3000);
-            };
+            whaleWS.onclose = () => { setTimeout(() => { if (whaleWS.coinKey === currentCoinKey) connectWhaleWS(); }, 3000); };
         }
 
         function addWhaleAlert(price, qty, value, type) {
@@ -735,7 +715,6 @@
                 liquidationWS = new WebSocket(`wss://fstream.binance.com/ws/${currentCoinKey.toLowerCase()}@forceOrder`);
                 liquidationWS.coinKey = currentCoinKey;
             } catch(e) { return; }
-
             liquidationWS.onmessage = (event) => {
                 try {
                     const msg = JSON.parse(event.data);
@@ -747,12 +726,7 @@
                     if (value >= 50000) addLiquidationAlert(price, qty, value, order.S);
                 } catch(e) {}
             };
-
-            liquidationWS.onclose = () => {
-                setTimeout(() => {
-                    if (liquidationWS.coinKey === currentCoinKey) connectLiquidationWS();
-                }, 5000);
-            };
+            liquidationWS.onclose = () => { setTimeout(() => { if (liquidationWS.coinKey === currentCoinKey) connectLiquidationWS(); }, 5000); };
         }
 
         function addLiquidationAlert(price, qty, value, side) {
@@ -774,18 +748,14 @@
             if (container.children.length > 10) container.lastChild.remove();
         }
 
-        // ============ Fetch Data ============
         async function fetchKlines() {
             let success = false;
             try {
                 const interval = tfToBinance(currentTimeframe);
                 const url = `https://api.binance.com/api/v3/klines?symbol=${currentCoinKey}&interval=${interval}&limit=100`;
-                console.log("🔄 جلب الشموع...");
                 const res = await fetchWithDirectOrProxy(url);
                 const raw = await res.json();
-                
                 if (!Array.isArray(raw) || raw.length === 0) throw new Error("bad data");
-                console.log(`✅ تم جلب ${raw.length} شمعة`);
 
                 const closes = [], highs = [], lows = [], opens = [], volumes = [], buyVols = [], sellVols = [];
                 raw.forEach(k => {
@@ -803,9 +773,7 @@
                 lastKlines = { opens, highs, lows, closes, volumes, buyVols, sellVols };
                 computeAndRenderAnalysis();
                 success = true;
-            } catch(err) {
-                console.log("❌ Klines error:", err.message);
-            }
+            } catch(err) { console.log("Klines error:", err.message); }
             fetchOrderBook();
             fetchDerivativesData();
             return success;
@@ -817,28 +785,24 @@
                 const res = await fetchWithDirectOrProxy(url);
                 const data = await res.json();
                 if (!data.bids || !data.asks) return;
-
                 const bidVol = data.bids.reduce((sum, b) => sum + parseFloat(b[1]), 0);
                 const askVol = data.asks.reduce((sum, a) => sum + parseFloat(a[1]), 0);
                 const total = bidVol + askVol;
                 const buyPct = total > 0 ? (bidVol / total * 100) : 50;
-
                 document.getElementById('ob-buy-text').innerText = `شراء: ${bidVol.toFixed(1)}`;
                 document.getElementById('ob-sell-text').innerText = `بيع: ${askVol.toFixed(1)}`;
                 document.getElementById('ob-buy-bar').style.width = `${buyPct}%`;
                 document.getElementById('ob-sell-bar').style.width = `${100 - buyPct}%`;
-
                 if (lastKlines) {
                     const high100 = Math.max(...lastKlines.highs.slice(-100));
                     const low100 = Math.min(...lastKlines.lows.slice(-100));
                     document.getElementById('liq-top').innerText = '$' + high100.toLocaleString(undefined, {maximumFractionDigits: 2});
                     document.getElementById('liq-bottom').innerText = '$' + low100.toLocaleString(undefined, {maximumFractionDigits: 2});
                 }
-            } catch(e) { console.log("OrderBook:", e.message); }
+            } catch(e) {}
         }
 
         async function fetchDerivativesData() {
-            // 1. Funding Rate
             try {
                 const fapiUrl = `https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${currentCoinKey}`;
                 const res = await fetchWithDirectOrProxy(fapiUrl);
@@ -849,19 +813,14 @@
                 const label = funding > 0.03 ? "مرتفع (خطر تصحيح)" : funding < -0.01 ? "سالب (فرصة شراء)" : "طبيعي";
                 document.getElementById('deriv-funding-label').innerText = label;
                 document.getElementById('deriv-funding').className = `text-2xl font-black font-mono ${funding > 0.03 ? 'text-red-400' : funding < -0.01 ? 'text-emerald-400' : 'text-white'}`;
-            } catch(e) { console.log("Funding:", e.message); }
-
-            // 2. Open Interest
+            } catch(e) {}
             try {
                 const oiUrl = `https://fapi.binance.com/fapi/v1/openInterest?symbol=${currentCoinKey}`;
                 const res = await fetchWithDirectOrProxy(oiUrl);
                 const oiData = await res.json();
-                const oi = parseFloat(oiData.openInterest);
-                derivativesData.oi = oi;
-                document.getElementById('deriv-oi').innerText = oi.toLocaleString(undefined, {maximumFractionDigits: 0});
-            } catch(e) { console.log("OI:", e.message); }
-
-            // 3. Long/Short Ratio
+                derivativesData.oi = parseFloat(oiData.openInterest);
+                document.getElementById('deriv-oi').innerText = derivativesData.oi.toLocaleString(undefined, {maximumFractionDigits: 0});
+            } catch(e) {}
             try {
                 const lsUrl = `https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${currentCoinKey}&period=1h&limit=1`;
                 const res = await fetchWithDirectOrProxy(lsUrl);
@@ -875,7 +834,7 @@
                     document.getElementById('deriv-long-bar').style.width = `${longPct}%`;
                     document.getElementById('deriv-short-bar').style.width = `${shortPct}%`;
                 }
-            } catch(e) { console.log("LongShort:", e.message); }
+            } catch(e) {}
         }
 
         async function fetchFearGreed() {
@@ -884,20 +843,18 @@
                 const data = await res.json();
                 if (data.data && data.data[0]) {
                     fearGreedValue = parseInt(data.data[0].value);
-                    const val = fearGreedValue;
                     let label = "محايد";
-                    if (val <= 25) label = "خوف شديد";
-                    else if (val <= 45) label = "خوف";
-                    else if (val >= 75) label = "طمع شديد";
-                    else if (val >= 55) label = "طمع";
-                    document.getElementById('fg-value').innerText = val;
+                    if (fearGreedValue <= 25) label = "خوف شديد";
+                    else if (fearGreedValue <= 45) label = "خوف";
+                    else if (fearGreedValue >= 75) label = "طمع شديد";
+                    else if (fearGreedValue >= 55) label = "طمع";
+                    document.getElementById('fg-value').innerText = fearGreedValue;
                     document.getElementById('fg-label').innerText = label;
-                    document.getElementById('fg-indicator').style.left = `${val}%`;
+                    document.getElementById('fg-indicator').style.left = `${fearGreedValue}%`;
                 }
-            } catch(e) { console.log("FearGreed:", e.message); }
+            } catch(e) {}
         }
 
-        // ============ Indicators ============
         function computeRSI(closes, period = 14) {
             if (closes.length < period + 1) return null;
             let avgGain = 0, avgLoss = 0;
@@ -986,6 +943,23 @@
             return cumV > 0 ? cumPV / cumV : null;
         }
 
+        // ✅ دالة حساب مستويات الدعم والمقاومة (Pivot Points)
+        function computePivotPoints(highs, lows, closes) {
+            if (highs.length < 3) return null;
+            // نستخدم الشمعة السابقة المكتملة لحساب نقاط البيفوت
+            const prevH = highs[highs.length - 2];
+            const prevL = lows[lows.length - 2];
+            const prevC = closes[closes.length - 2];
+            
+            const pivot = (prevH + prevL + prevC) / 3;
+            const r1 = 2 * pivot - prevL;
+            const s1 = 2 * pivot - prevH;
+            const r2 = pivot + (prevH - prevL);
+            const s2 = pivot - (prevH - prevL);
+            
+            return { pivot, r1, r2, s1, s2 };
+        }
+
         function detectICT(opens, highs, lows, closes) {
             if (closes.length < 5) return { ob: '—', fvg: '—', sweep: '—' };
             const lastCandle = closes.length - 1;
@@ -1006,9 +980,7 @@
             return { ob, fvg, sweep };
         }
 
-        // ============ ✅ AI Aggregation - محدّث بالكامل ============
         function runFullAggregation() {
-            console.log("🎯 runFullAggregation called");
             const modal = document.getElementById('ai-modal');
             const verdict = document.getElementById('ai-verdict');
             const verdictSub = document.getElementById('ai-verdict-sub');
@@ -1016,7 +988,6 @@
             const analyzeText = document.getElementById('ai-analyze-text');
             const retryBtn = document.getElementById('ai-retry-btn');
             
-            // فتح النافذة فوراً
             modal.classList.remove('hidden');
             verdict.innerText = "جاري التحليل...";
             verdict.className = "text-2xl font-black mb-2 text-amber-400";
@@ -1025,22 +996,18 @@
             if (retryBtn) retryBtn.classList.add('hidden');
             if (analyzeText) analyzeText.innerText = "جاري التحليل...";
 
-            // إذا كانت الشموع متاحة، حلل مباشرة
             if (lastKlines && lastKlines.closes && lastKlines.closes.length > 20) {
                 actuallyRunAggregation();
                 if (analyzeText) analyzeText.innerText = "استخراج التحليل الشامل (AI Decision)";
                 return;
             }
 
-            // وإلا جلب الشموع أولاً
-            console.log("⚠️ الشموع غير متاحة، جلب...");
             verdict.innerText = "جاري تحميل الشموع...";
             fetchKlines().then(success => {
                 if (analyzeText) analyzeText.innerText = "استخراج التحليل الشامل (AI Decision)";
                 if (success && lastKlines && lastKlines.closes.length > 20) {
                     actuallyRunAggregation();
                 } else {
-                    console.log("⚠️ فشل جلب الشموع، استخدام تحليل بديل");
                     showFallbackAnalysis();
                 }
             });
@@ -1055,60 +1022,79 @@
             
             const rsi = computeRSI(closes);
             if (rsi !== null) {
-                if (rsi < 30) { score += 2; reasons.push({ text: `RSI في تشبع بيع (${rsi.toFixed(1)}) - فرصة شراء`, type: "bull" }); }
-                else if (rsi > 70) { score -= 2; reasons.push({ text: `RSI في تشبع شراء (${rsi.toFixed(1)}) - خطر هبوط`, type: "bear" }); }
-                else if (rsi > 50) { score += 0.5; reasons.push({ text: `RSI يميل للصعود (${rsi.toFixed(1)})`, type: "bull" }); }
-                else { score -= 0.5; reasons.push({ text: `RSI يميل للهبوط (${rsi.toFixed(1)})`, type: "bear" }); }
+                if (rsi < 30) { score += 2; reasons.push({ text: `RSI في تشبع بيع (${rsi.toFixed(1)})`, type: "bull" }); }
+                else if (rsi > 70) { score -= 2; reasons.push({ text: `RSI في تشبع شراء (${rsi.toFixed(1)})`, type: "bear" }); }
+                else if (rsi > 50) { score += 0.5; reasons.push({ text: "RSI يميل للصعود", type: "bull" }); }
+                else { score -= 0.5; reasons.push({ text: "RSI يميل للهبوط", type: "bear" }); }
             }
 
             const macd = computeMACD(closes);
             if (macd && macd.histogram !== null) {
-                if (macd.histogram > 0) { score += 1.5; reasons.push({ text: "MACD يعطي تقاطعاً صاعداً", type: "bull" }); }
-                else { score -= 1.5; reasons.push({ text: "MACD يعطي تقاطعاً هابطاً", type: "bear" }); }
+                if (macd.histogram > 0) { score += 1.5; reasons.push({ text: "MACD تقاطع صاعد", type: "bull" }); }
+                else { score -= 1.5; reasons.push({ text: "MACD تقاطع هابط", type: "bear" }); }
             }
 
             const ema20 = computeEMA(closes, 20);
             const ema50 = computeEMA(closes, 50);
             if (ema20 !== null && ema50 !== null) {
-                if (ema20 > ema50) { score += 1; reasons.push({ text: "المتوسطات الأسية إيجابية (EMA20 > EMA50)", type: "bull" }); }
-                else { score -= 1; reasons.push({ text: "المتوسطات الأسية سلبية (EMA20 < EMA50)", type: "bear" }); }
+                if (ema20 > ema50) { score += 1; reasons.push({ text: "EMA20 > EMA50 (اتجاه صاعد)", type: "bull" }); }
+                else { score -= 1; reasons.push({ text: "EMA20 < EMA50 (اتجاه هابط)", type: "bear" }); }
             }
 
             const stoch = computeStochRSI(closes);
             if (stoch) {
-                if (stoch.k < 20) { score += 1; reasons.push({ text: `Stoch RSI في تشبع بيع (${stoch.k.toFixed(1)})`, type: "bull" }); }
-                else if (stoch.k > 80) { score -= 1; reasons.push({ text: `Stoch RSI في تشبع شراء (${stoch.k.toFixed(1)})`, type: "bear" }); }
+                if (stoch.k < 20) { score += 1; reasons.push({ text: "Stoch RSI تشبع بيع", type: "bull" }); }
+                else if (stoch.k > 80) { score -= 1; reasons.push({ text: "Stoch RSI تشبع شراء", type: "bear" }); }
             }
 
             const vwap = computeVWAP(highs, lows, closes, volumes);
             if (vwap) {
-                if (price > vwap) { score += 1; reasons.push({ text: "السعر فوق VWAP (اتجاه صاعد)", type: "bull" }); }
-                else { score -= 1; reasons.push({ text: "السعر تحت VWAP (اتجاه هابط)", type: "bear" }); }
+                if (price > vwap) { score += 1; reasons.push({ text: "السعر فوق VWAP", type: "bull" }); }
+                else { score -= 1; reasons.push({ text: "السعر تحت VWAP", type: "bear" }); }
             }
 
             const buyBar = document.getElementById('ob-buy-bar');
             const buyPct = parseFloat(buyBar.style.width) || 50;
-            if (buyPct > 60) { score += 1; reasons.push({ text: `سيولة الشراء أقوى (${buyPct.toFixed(0)}%)`, type: "bull" }); }
-            else if (buyPct < 40) { score -= 1; reasons.push({ text: `سيولة البيع أقوى (${(100-buyPct).toFixed(0)}%)`, type: "bear" }); }
+            if (buyPct > 60) { score += 1; reasons.push({ text: "سيولة الشراء أقوى", type: "bull" }); }
+            else if (buyPct < 40) { score -= 1; reasons.push({ text: "سيولة البيع أقوى", type: "bear" }); }
 
-            if (fearGreedValue <= 25) { score += 1; reasons.push({ text: "السوق في خوف شديد (فرصة عكسية)", type: "bull" }); }
-            else if (fearGreedValue >= 75) { score -= 1; reasons.push({ text: "السوق في طمع شديد (احتمال تصحيح)", type: "bear" }); }
+            if (fearGreedValue <= 25) { score += 1; reasons.push({ text: "خوف شديد (فرصة عكسية)", type: "bull" }); }
+            else if (fearGreedValue >= 75) { score -= 1; reasons.push({ text: "طمع شديد (احتمال تصحيح)", type: "bear" }); }
 
             if (derivativesData.funding !== null) {
-                if (derivativesData.funding < -0.01) { score += 1.5; reasons.push({ text: "معدل التمويل سالب (فرصة شراء)", type: "bull" }); }
-                else if (derivativesData.funding > 0.03) { score -= 1.5; reasons.push({ text: "معدل التمويل مرتفع (خطر تصحيح)", type: "bear" }); }
+                if (derivativesData.funding < -0.01) { score += 1.5; reasons.push({ text: "معدل تمويل سالب", type: "bull" }); }
+                else if (derivativesData.funding > 0.03) { score -= 1.5; reasons.push({ text: "معدل تمويل مرتفع", type: "bear" }); }
             }
 
             if (derivativesData.longShort) {
-                if (derivativesData.longShort.long > 65) { score -= 1; reasons.push({ text: "نسبة الشراء مرتفعة جداً (احتمال تصحيح)", type: "bear" }); }
-                else if (derivativesData.longShort.long < 35) { score += 1; reasons.push({ text: "نسبة الشراء منخفضة جداً (فرصة شراء)", type: "bull" }); }
+                if (derivativesData.longShort.long > 65) { score -= 1; reasons.push({ text: "نسبة Long مرتفعة جداً", type: "bear" }); }
+                else if (derivativesData.longShort.long < 35) { score += 1; reasons.push({ text: "نسبة Long منخفضة جداً", type: "bull" }); }
             }
 
             const ict = detectICT(opens, highs, lows, closes);
-            if (ict.ob.includes('Bullish')) { score += 0.5; reasons.push({ text: "Order Block صاعد (دعم)", type: "bull" }); }
-            else if (ict.ob.includes('Bearish')) { score -= 0.5; reasons.push({ text: "Order Block هابط (مقاومة)", type: "bear" }); }
-            if (ict.sweep.includes('أسفل')) { score += 0.5; reasons.push({ text: "Liquidity Sweep أسفل (اصطياد بيع)", type: "bull" }); }
-            else if (ict.sweep.includes('أعلى')) { score -= 0.5; reasons.push({ text: "Liquidity Sweep أعلى (اصطياد شراء)", type: "bear" }); }
+            if (ict.ob.includes('Bullish')) { score += 0.5; reasons.push({ text: "Order Block صاعد", type: "bull" }); }
+            else if (ict.ob.includes('Bearish')) { score -= 0.5; reasons.push({ text: "Order Block هابط", type: "bear" }); }
+            if (ict.sweep.includes('أسفل')) { score += 0.5; reasons.push({ text: "Liquidity Sweep أسفل", type: "bull" }); }
+            else if (ict.sweep.includes('أعلى')) { score -= 0.5; reasons.push({ text: "Liquidity Sweep أعلى", type: "bear" }); }
+
+            // ✅ إضافة الدعم والمقاومة إلى محرك التحليل
+            const pivotData = computePivotPoints(highs, lows, closes);
+            if (pivotData) {
+                const threshold = price * 0.005; // 0.5% قرب
+                if (Math.abs(price - pivotData.s1) < threshold) {
+                    score += 1.5; reasons.push({ text: "السعر قريب من دعم S1", type: "bull" });
+                } else if (Math.abs(price - pivotData.s2) < threshold) {
+                    score += 2; reasons.push({ text: "السعر قريب من دعم S2 القوي", type: "bull" });
+                } else if (Math.abs(price - pivotData.r1) < threshold) {
+                    score -= 1.5; reasons.push({ text: "السعر قريب من مقاومة R1", type: "bear" });
+                } else if (Math.abs(price - pivotData.r2) < threshold) {
+                    score -= 2; reasons.push({ text: "السعر قريب من مقاومة R2 القوية", type: "bear" });
+                } else if (price > pivotData.r1 && closes[closes.length - 3] < pivotData.r1) {
+                    score += 1; reasons.push({ text: "اختراق مقاومة R1", type: "bull" });
+                } else if (price < pivotData.s1 && closes[closes.length - 3] > pivotData.s1) {
+                    score -= 1; reasons.push({ text: "كسر دعم S1", type: "bear" });
+                }
+            }
 
             displayAIDecision(score >= 0, score, reasons, price, false);
         }
@@ -1117,39 +1103,19 @@
             const coin = coinsMap[currentCoinKey];
             const price = coin.price || 0;
             const change24 = coin.change24 || 0;
-            const high24 = coin.high || 0;
-            const low24 = coin.low || 0;
-            
             let score = 0;
             let reasons = [];
-            
             if (price === 0) {
-                reasons.push({ text: "لم يتم استلام السعر بعد، انتظر لحظات", type: "bear" });
+                reasons.push({ text: "لم يتم استلام السعر بعد", type: "bear" });
                 displayAIDecision(false, 0, reasons, 0, true);
                 return;
             }
-
-            if (change24 > 5) { score += 2; reasons.push({ text: `صعود قوي (${change24.toFixed(2)}% في 24س)`, type: "bull" }); }
-            else if (change24 > 1) { score += 1; reasons.push({ text: `صعود (${change24.toFixed(2)}% في 24س)`, type: "bull" }); }
-            else if (change24 < -5) { score -= 2; reasons.push({ text: `هبوط قوي (${change24.toFixed(2)}% في 24س)`, type: "bear" }); }
-            else if (change24 < -1) { score -= 1; reasons.push({ text: `هبوط (${change24.toFixed(2)}% في 24س)`, type: "bear" }); }
-            else { reasons.push({ text: `تداول عرضي (${change24.toFixed(2)}% في 24س)`, type: "bull" }); }
-
-            const range = high24 - low24;
-            if (range > 0) {
-                const position = (price - low24) / range;
-                if (position > 0.8) { score -= 1; reasons.push({ text: "السعر قريب من أعلى مستوى (احتمال تصحيح)", type: "bear" }); }
-                else if (position < 0.2) { score += 1; reasons.push({ text: "السعر قريب من أدنى مستوى (فرصة شراء)", type: "bull" }); }
-            }
-
-            if (fearGreedValue <= 25) { score += 1; reasons.push({ text: "خوف شديد في السوق (فرصة عكسية)", type: "bull" }); }
-            else if (fearGreedValue >= 75) { score -= 1; reasons.push({ text: "طمع شديد في السوق (احتمال تصحيح)", type: "bear" }); }
-
-            if (derivativesData.funding !== null) {
-                if (derivativesData.funding < -0.01) { score += 1.5; reasons.push({ text: "معدل التمويل سالب (فرصة شراء)", type: "bull" }); }
-                else if (derivativesData.funding > 0.03) { score -= 1.5; reasons.push({ text: "معدل التمويل مرتفع (خطر تصحيح)", type: "bear" }); }
-            }
-
+            if (change24 > 5) { score += 2; reasons.push({ text: `صعود قوي (${change24.toFixed(2)}%)`, type: "bull" }); }
+            else if (change24 > 1) { score += 1; reasons.push({ text: `صعود (${change24.toFixed(2)}%)`, type: "bull" }); }
+            else if (change24 < -5) { score -= 2; reasons.push({ text: `هبوط قوي (${change24.toFixed(2)}%)`, type: "bear" }); }
+            else if (change24 < -1) { score -= 1; reasons.push({ text: `هبوط (${change24.toFixed(2)}%)`, type: "bear" }); }
+            if (fearGreedValue <= 25) { score += 1; reasons.push({ text: "خوف شديد في السوق", type: "bull" }); }
+            else if (fearGreedValue >= 75) { score -= 1; reasons.push({ text: "طمع شديد في السوق", type: "bear" }); }
             displayAIDecision(score >= 0, score, reasons, price, true);
         }
 
@@ -1166,17 +1132,15 @@
             const tradeBtn = document.getElementById('ai-trade-btn');
             const retryBtn = document.getElementById('ai-retry-btn');
 
-            const maxScore = 11;
+            const maxScore = 14; // زيادة بسبب إضافة الدعم والمقاومة
             const confidence = Math.min(95, Math.max(5, Math.round(Math.abs(score) / maxScore * 100)));
-            
             aiDecisionResult = { isBullish, confidence, price, score };
-
             modal.classList.remove('hidden');
 
             if (isBullish) {
                 verdict.innerText = "صعود 📈";
                 verdict.className = "text-3xl font-black mb-2 text-emerald-400";
-                verdictSub.innerText = isFallback ? "⚠️ تحليل بديل (الشموع لم تُحمّل - اضغط إعادة المحاولة)" : "المؤشرات الفنية وبيانات المشتقات تدعم الاتجاه الصاعد.";
+                verdictSub.innerText = isFallback ? "⚠️ تحليل بديل (اضغط إعادة المحاولة)" : "المؤشرات الفنية والمشتقات تدعم الصعود.";
                 iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3 shadow-2xl bg-emerald-500 shadow-emerald-500/50";
                 icon.setAttribute('data-lucide', 'trending-up');
                 glow.className = "absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30 pointer-events-none bg-emerald-500";
@@ -1186,7 +1150,7 @@
             } else {
                 verdict.innerText = "هبوط 📉";
                 verdict.className = "text-3xl font-black mb-2 text-red-400";
-                verdictSub.innerText = isFallback ? "⚠️ تحليل بديل (الشموع لم تُحمّل - اضغط إعادة المحاولة)" : "المؤشرات الفنية وبيانات المشتقات تدعم الاتجاه الهابط.";
+                verdictSub.innerText = isFallback ? "⚠️ تحليل بديل (اضغط إعادة المحاولة)" : "المؤشرات الفنية والمشتقات تدعم الهبوط.";
                 iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3 shadow-2xl bg-red-500 shadow-red-500/50";
                 icon.setAttribute('data-lucide', 'trending-down');
                 glow.className = "absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl opacity-30 pointer-events-none bg-red-500";
@@ -1197,19 +1161,16 @@
 
             confidenceText.innerText = confidence + "%";
             setTimeout(() => { confidenceBar.style.width = confidence + "%"; }, 100);
-
             reasonsContainer.innerHTML = '';
             reasons.forEach(r => {
                 const color = r.type === 'bull' ? 'text-emerald-400' : 'text-red-400';
                 reasonsContainer.innerHTML += `<div class="flex items-start gap-2 ${color}"><span>•</span><span class="text-gray-300">${r.text}</span></div>`;
             });
-
             if (retryBtn) retryBtn.classList.toggle('hidden', !isFallback);
             lucide.createIcons();
         }
 
         function retryAnalysis() {
-            console.log("🔄 إعادة محاولة التحليل...");
             lastKlines = null;
             runFullAggregation();
         }
@@ -1225,7 +1186,6 @@
             closeAIModal();
         }
 
-        // ============ Render ============
         function computeAndRenderAnalysis() {
             if (!lastKlines) return;
             const { opens, highs, lows, closes, volumes, buyVols, sellVols } = lastKlines;
@@ -1292,6 +1252,16 @@
                 vwapEl.className = `font-bold ${price > vwap ? 'text-emerald-400' : 'text-red-400'}`;
             }
 
+            // ✅ حساب وعرض الدعم والمقاومة
+            const pivotData = computePivotPoints(highs, lows, closes);
+            if (pivotData) {
+                document.getElementById('sr-r2').innerText = '$' + pivotData.r2.toLocaleString(undefined, {maximumFractionDigits: 2});
+                document.getElementById('sr-r1').innerText = '$' + pivotData.r1.toLocaleString(undefined, {maximumFractionDigits: 2});
+                document.getElementById('sr-current').innerText = '$' + price.toLocaleString(undefined, {maximumFractionDigits: 2});
+                document.getElementById('sr-s1').innerText = '$' + pivotData.s1.toLocaleString(undefined, {maximumFractionDigits: 2});
+                document.getElementById('sr-s2').innerText = '$' + pivotData.s2.toLocaleString(undefined, {maximumFractionDigits: 2});
+            }
+
             const ict = detectICT(opens, highs, lows, closes);
             document.getElementById('ind-ict-ob').innerText = ict.ob;
             document.getElementById('ind-ict-ob').className = `font-bold ${ict.ob.includes('Bullish') ? 'text-emerald-400' : ict.ob.includes('Bearish') ? 'text-red-400' : 'text-gray-400'}`;
@@ -1338,7 +1308,6 @@
             document.getElementById('sig-tp3').innerText = "$" + (price * (1 + tpMult[2] * atrPct * 1.5)).toLocaleString(undefined, {maximumFractionDigits: 2});
         }
 
-        // ============ UI ============
         function switchAnalysisTab(tab) {
             const tabs = ['summary', 'advanced', 'derivatives', 'liquidity', 'sentiment'];
             tabs.forEach(t => {
@@ -1465,7 +1434,6 @@
             }
         }
 
-        // ============ Trading ============
         function executePaperTrade(type) {
             const amount = parseFloat(document.getElementById('trade-amount-input').value);
             const leverage = parseInt(document.getElementById('trade-leverage-input').value);
